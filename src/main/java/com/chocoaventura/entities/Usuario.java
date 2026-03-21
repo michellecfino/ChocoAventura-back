@@ -1,4 +1,4 @@
-package com.chocoaventura.entities;
+package com.chocoaventura.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;

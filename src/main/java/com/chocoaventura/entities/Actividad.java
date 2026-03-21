@@ -1,17 +1,20 @@
-package com.chocoaventura.entities;
+package com.chocoaventura.Entities;
+import java.time.LocalDate;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.*;
 
-import java.time.LocalDate;
 
 @Entity
 @Table(name = "actividades")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Actividad {
 
     @Id
@@ -19,19 +22,20 @@ public class Actividad {
     private Long id;
 
     @Column(nullable = false)
-    private String nombre;
+    private String titulo;
 
+    private String nombre; // Podrías usarlo como subtitulo
+
+    @Column(columnDefinition = "TEXT")
     private String descripcion;
 
     private Double costoPorPersona;
-
     private Integer duracion;
-
     private LocalDate fechaInicio;
-
     private LocalDate fechaFin;
-
     private Double calificacionPromedio;
+    
+    private String fuente; 
 
     @ManyToOne
     @JoinColumn(name = "categoria_id")
