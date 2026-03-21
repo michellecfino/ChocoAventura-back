@@ -3,17 +3,18 @@ package com.chocoaventura.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "usuarios")
+@Table(name = "grupos_viaje")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Usuario {
+public class GrupoViaje {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,15 +23,15 @@ public class Usuario {
     @Column(nullable = false)
     private String nombre;
 
-    @Column(nullable = false, unique = true)
-    private String login;
+    private String descripcion;
 
-    @Column(nullable = false, unique = true)
-    private String correo;
+    private LocalTime horaAlmuerzo;
 
-    private String telefono;
+    private LocalTime horaInicioActividades;
 
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private String estadia;
+
+    @OneToMany(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private Set<Perfil> perfiles = new HashSet<>();
 }

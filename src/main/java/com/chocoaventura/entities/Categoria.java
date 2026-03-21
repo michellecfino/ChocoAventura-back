@@ -7,13 +7,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "usuarios")
+@Table(name = "categorias")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Usuario {
+public class Categoria {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,15 +22,9 @@ public class Usuario {
     @Column(nullable = false)
     private String nombre;
 
-    @Column(nullable = false, unique = true)
-    private String login;
+    private String descripcion;
 
-    @Column(nullable = false, unique = true)
-    private String correo;
-
-    private String telefono;
-
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "categoria")
     @Builder.Default
-    private Set<Perfil> perfiles = new HashSet<>();
+    private Set<Actividad> actividades = new HashSet<>();
 }
