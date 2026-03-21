@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.*;
 
-import com.chocoaventura.Entities.Actividad;
+import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.Services.ActividadService;
 
 @RestController

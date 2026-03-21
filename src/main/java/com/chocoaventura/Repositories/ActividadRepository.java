@@ -4,7 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-import com.chocoaventura.Entities.Actividad;
+import com.chocoaventura.entities.Actividad;
 
 import jakarta.transaction.Transactional;
 
