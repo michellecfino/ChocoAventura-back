@@ -6,4 +6,9 @@ Este repositorio contiene el backend del proyecto ChocoAventura
 docker compose up -d
 
 2. Ejecutar proyecto:
-mvn spring-boot:run
+.\mvnw spring-boot:run
+
+3. Ver tablas en pgAdmin:
+http://localhost:5050
+email: admin@chocoaventura.com
+password: admin123
