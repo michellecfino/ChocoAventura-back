@@ -1,10 +1,11 @@
-package com.chocoaventura.Entities;
+package com.chocoaventura.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -31,7 +32,22 @@ public class GrupoViaje {
 
     private String estadia;
 
+     @OneToMany(mappedBy = "grupo")
+    private List<Perfil> perfiles;
+
     @OneToMany(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private Set<Perfil> perfiles = new HashSet<>();
+    private Set<Balance> balances = new HashSet<>();
+
+    @OneToOne(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Subasta subasta;
+
+    @OneToMany(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<Pago> itinerarios = new HashSet<>();
+
+    @OneToOne(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Itinerario itinerario;
+
 }
+

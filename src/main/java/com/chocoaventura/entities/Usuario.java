@@ -1,10 +1,10 @@
-package com.chocoaventura.Entities;
+package com.chocoaventura.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.HashSet;
-import java.util.Set;
+
+import java.util.List;
 
 @Entity
 @Table(name = "usuarios")
@@ -30,7 +30,8 @@ public class Usuario {
 
     private String telefono;
 
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private Set<Perfil> perfiles = new HashSet<>();
+    
+
+    @OneToMany(mappedBy = "usuario")
+    private List<Perfil> perfiles;
 }
