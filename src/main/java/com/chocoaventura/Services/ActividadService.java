@@ -13,7 +13,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.chocoaventura.Entities.Actividad;
+import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.Repositories.ActividadRepository;
 
 @Service

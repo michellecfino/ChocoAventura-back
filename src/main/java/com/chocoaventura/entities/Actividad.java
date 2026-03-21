@@ -1,4 +1,4 @@
-package com.chocoaventura.Entities;
+package com.chocoaventura.entities;
 
 import java.time.LocalDate;
 
@@ -19,6 +19,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+
 public class Actividad {
 
     @Id
