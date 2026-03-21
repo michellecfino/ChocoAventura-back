@@ -1,4 +1,5 @@
 package com.chocoaventura.Entities;
+
 import java.time.LocalDate;
 
 import jakarta.persistence.Column;
@@ -11,10 +12,13 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.*;
 
-
 @Entity
 @Table(name = "actividades")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Actividad {
 
     @Id
@@ -34,8 +38,10 @@ public class Actividad {
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
     private Double calificacionPromedio;
-    
-    private String fuente; 
+    private String imagenUrl;
+    private String preciosDetallados;
+
+    private String fuente;
 
     @ManyToOne
     @JoinColumn(name = "categoria_id")

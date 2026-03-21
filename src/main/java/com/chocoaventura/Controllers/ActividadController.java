@@ -1,6 +1,10 @@
 package com.chocoaventura.Controllers;
 
+import java.util.List;
+
 import org.springframework.web.bind.annotation.*;
+
+import com.chocoaventura.Entities.Actividad;
 import com.chocoaventura.Services.ActividadService;
 
 @RestController
@@ -16,6 +20,11 @@ public class ActividadController {
     @GetMapping("/scrapear")
     public String scrapear() {
         scraperService.scrapearIdartes();
-        return "Scraping ejecutado";
+        return "OY EL CODIGO NUEVO 2026";
+    }
+
+    @GetMapping
+    public List<Actividad> getActividades() {
+        return scraperService.getAll();
     }
 }
