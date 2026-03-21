@@ -12,3 +12,10 @@ docker compose up -d
 http://localhost:5050
 email: admin@chocoaventura.com
 password: admin123
+Servers
+  → tu servidor
+    → Databases
+      → chocoaventura_db
+        → Schemas
+          → public
+            → Tables
