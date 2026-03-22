@@ -1,4 +1,4 @@
-package com.chocoaventura.repositories;
+package com.chocoaventura.Repositories;
 
 import com.chocoaventura.entities.AsignacionTokens;
 import org.springframework.data.jpa.repository.JpaRepository;

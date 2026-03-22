@@ -1,4 +1,4 @@
-package com.chocoaventura.repositories;
+package com.chocoaventura.Repositories;
 
 import com.chocoaventura.entities.Actividad;
 import jakarta.transaction.Transactional;
