@@ -1,4 +1,4 @@
-package com.chocoaventura.Controllers;
+package com.chocoaventura.controllers;
 
 public class UbicacionController {
     

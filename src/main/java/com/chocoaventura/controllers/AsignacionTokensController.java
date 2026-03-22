@@ -1,4 +1,4 @@
-package com.chocoaventura.Controllers;
+package com.chocoaventura.controllers;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.chocoaventura.entities.AsignacionTokens;
-import com.chocoaventura.Services.AsignacionTokensService;
+import com.chocoaventura.services.AsignacionTokensService;
 
 @RestController
 @RequestMapping("/asignaciones-tokens")

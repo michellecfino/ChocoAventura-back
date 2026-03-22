@@ -1,4 +1,4 @@
-package com.chocoaventura.Controllers;
+package com.chocoaventura.controllers;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.chocoaventura.entities.RondaSubasta;
-import com.chocoaventura.Services.RondaSubastaService;
+import com.chocoaventura.services.RondaSubastaService;
 
 @RestController
 @RequestMapping("/rondas-subasta")
