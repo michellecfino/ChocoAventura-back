@@ -1,4 +1,4 @@
-package com.chocoaventura.Services;
+package com.chocoaventura.services;
 
 import java.util.List;
 
@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.chocoaventura.entities.Horario;
-import com.chocoaventura.Repositories.HorarioRepository;
+import com.chocoaventura.repositories.HorarioRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 

@@ -1,4 +1,4 @@
-package com.chocoaventura.Services;
+package com.chocoaventura.services;
 
 import java.util.List;
 
@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 
 import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.entities.Perfil;
-import com.chocoaventura.Repositories.ActividadRepository;
-import com.chocoaventura.Repositories.PerfilRepository;
+import com.chocoaventura.repositories.ActividadRepository;
+import com.chocoaventura.repositories.PerfilRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 

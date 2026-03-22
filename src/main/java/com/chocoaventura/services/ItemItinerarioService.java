@@ -1,4 +1,4 @@
-package com.chocoaventura.Services;
+package com.chocoaventura.services;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -9,9 +9,9 @@ import org.springframework.stereotype.Service;
 import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.entities.ItemItinerario;
 import com.chocoaventura.entities.Itinerario;
-import com.chocoaventura.Repositories.ActividadRepository;
-import com.chocoaventura.Repositories.ItemItinerarioRepository;
-import com.chocoaventura.Repositories.ItinerarioRepository;
+import com.chocoaventura.repositories.ActividadRepository;
+import com.chocoaventura.repositories.ItemItinerarioRepository;
+import com.chocoaventura.repositories.ItinerarioRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 

@@ -1,4 +1,4 @@
-package com.chocoaventura.Services;
+package com.chocoaventura.services;
 
 import java.util.List;
 
@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.chocoaventura.entities.Categoria;
-import com.chocoaventura.Repositories.CategoriaRepository;
+import com.chocoaventura.repositories.CategoriaRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 

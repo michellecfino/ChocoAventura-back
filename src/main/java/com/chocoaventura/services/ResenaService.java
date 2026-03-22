@@ -1,4 +1,4 @@
-package com.chocoaventura.Services;
+package com.chocoaventura.services;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -9,9 +9,9 @@ import org.springframework.stereotype.Service;
 import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.entities.Perfil;
 import com.chocoaventura.entities.Resena;
-import com.chocoaventura.Repositories.ActividadRepository;
-import com.chocoaventura.Repositories.PerfilRepository;
-import com.chocoaventura.Repositories.ResenaRepository;
+import com.chocoaventura.repositories.ActividadRepository;
+import com.chocoaventura.repositories.PerfilRepository;
+import com.chocoaventura.repositories.ResenaRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 

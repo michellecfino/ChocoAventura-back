@@ -1,4 +1,4 @@
-package com.chocoaventura.Services;
+package com.chocoaventura.services;
 
 import java.util.List;
 
@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.chocoaventura.entities.DiaSemana;
-import com.chocoaventura.Repositories.DiaSemanaRepository;
+import com.chocoaventura.repositories.DiaSemanaRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 

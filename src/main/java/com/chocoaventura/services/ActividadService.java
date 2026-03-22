@@ -1,8 +1,8 @@
-package com.chocoaventura.Services;
+package com.chocoaventura.services;
 
 import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.entities.Imagen;
-import com.chocoaventura.Repositories.ActividadRepository;
+import com.chocoaventura.repositories.ActividadRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;

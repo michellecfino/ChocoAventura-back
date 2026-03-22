@@ -1,4 +1,4 @@
-package com.chocoaventura.Services;
+package com.chocoaventura.services;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -10,10 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.chocoaventura.DTOs.UnirseGrupoDTO;
-import com.chocoaventura.Repositories.CategoriaRepository;
-import com.chocoaventura.Repositories.GrupoViajeRepository;
-import com.chocoaventura.Repositories.PerfilRepository;
-import com.chocoaventura.Repositories.UsuarioRepository;
+import com.chocoaventura.repositories.CategoriaRepository;
+import com.chocoaventura.repositories.GrupoViajeRepository;
+import com.chocoaventura.repositories.PerfilRepository;
+import com.chocoaventura.repositories.UsuarioRepository;
 import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.entities.Categoria;
 import com.chocoaventura.entities.Ciudad;

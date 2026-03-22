@@ -1,4 +1,4 @@
-package com.chocoaventura.Services;
+package com.chocoaventura.services;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 
 import com.chocoaventura.entities.GrupoViaje;
 import com.chocoaventura.entities.RondaSubasta;
-import com.chocoaventura.Repositories.GrupoViajeRepository;
-import com.chocoaventura.Repositories.RondaSubastaRepository;
+import com.chocoaventura.repositories.GrupoViajeRepository;
+import com.chocoaventura.repositories.RondaSubastaRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 
