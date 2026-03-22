@@ -23,6 +23,7 @@ public class Perfil {
     private Integer personasCargo;
 
     private Integer tiempo;
+    private String codigoVuelo; //TODO: debe estar en los servicios poder agregar este dato al perfil 
 
     @OneToMany(mappedBy = "perfil")
     private List<Categoria> categoriasPreferidas;

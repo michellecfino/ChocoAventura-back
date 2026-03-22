@@ -5,7 +5,6 @@ import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 
 import com.chocoaventura.DTOs.UnirseGrupoDTO;
@@ -14,13 +13,15 @@ import com.chocoaventura.Repositories.GrupoRepository;
 import com.chocoaventura.Repositories.UsuarioRepository;
 import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.entities.Categoria;
+import com.chocoaventura.entities.Ciudad;
 import com.chocoaventura.entities.GrupoViaje;
 import com.chocoaventura.entities.Perfil;
+import com.chocoaventura.entities.Ubicacion;
 import com.chocoaventura.entities.Usuario;
 
 @Service
 public class GrupoViajeService {
-    public GrupoViaje crearGrupoViaje(String nombre, String destino, Date fechaInicio, Date fechaFin, String descripcion, Usuario usuarioCreador, LocalTime horaAlmuerzo, LocalTime horaInicioActividades) {
+    public GrupoViaje crearGrupoViaje(String nombre, String nombreDestino, String PaisDestino, String direccion, double lat, double longi, Date fechaInicio, Date fechaFin, String descripcion, Usuario usuarioCreador, LocalTime horaAlmuerzo, LocalTime horaInicioActividades,Integer tiempoParaAlmorzar) {
         /*if (nombre==null){
             try {
                 throw new IllegalArgumentException("El nombre del grupo de viaje no puede ser nulo");
@@ -31,18 +32,19 @@ public class GrupoViajeService {
 
         // puedo hacer las validaciones en el front de que si manden todos los valores y si no mande error y asi en esta parte me ahorro las avalidadicones 
         // La unica que hago aqui es la de descripcion porque es la unica que puede ser nula y si es nula le asigno un valor por defecto para asi evitar errores en el futuro cuando se quiera mostrar la descripcion del grupo de viaje y esta sea nula
-
+        
 
         if (descripcion==null) {
-            descripcion = "Este es el viaje para " + destino + " desde " + fechaInicio.toString() + " hasta " + fechaFin.toString() ;
+            descripcion = "Este es el viaje para " + nombreDestino + " desde " + fechaInicio.toString() + " hasta " + fechaFin.toString() ;
         }
         /*
         La hora del almuerzo por ahora la define el usuario que crea el grupo de viaje pero 
         en el futuro se puede hacer una votacion para definir la hora del almuerzo y la hora de inicio de las actividades 
         y asi tener una hora más justa para todos los usuarios del grupo de viaje. Por ahora asumamos que son felices y  no pelean
          */
-      
-        GrupoViaje grupoViaje = new GrupoViaje(nombre, descripcion, fechaInicio, fechaFin, destino);
+        Ubicacion estadia = new Ubicacion(nombreDestino,direccion, lat, longi);
+        Ciudad destino = new Ciudad(nombreDestino, PaisDestino,estadia);
+        GrupoViaje grupoViaje = new GrupoViaje(nombre, descripcion, fechaInicio, fechaFin, destino, horaAlmuerzo, horaInicioActividades, tiempoParaAlmorzar);
           /*-------------------------------------------------
             IMPORTANTE 
             -------------------------------------------------
@@ -65,7 +67,9 @@ public class GrupoViajeService {
             ------------------------------------
             En esta parte se le pide al usuario qeu seleccione las categorias y llene otro tipo de formulario para asi tener toda la info 
             De nuevo esto va en el front 
+            o 
         */
+ 
 
         Perfil perfil = new Perfil(presupuesto, personasACargo, tiempoDisponible, categoriasPreferidas);
 

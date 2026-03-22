@@ -13,9 +13,7 @@ import java.util.Set;
 @Table(name = "grupos_viaje")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+
 public class GrupoViaje {
 
     @Id
@@ -35,37 +33,45 @@ public class GrupoViaje {
 
     private Date fechaFin;
 
-    private String destino;
 
-    private String estadia;
+    private Integer tiempoParaAlmorzar;//minutos 
 
-     @OneToMany(mappedBy = "grupo")
+    @OneToOne(cascade = CascadeType.ALL)
+    private Ciudad destino;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    private Ubicacion estadia;
+
+
+    @OneToMany(mappedBy = "grupo")
     private List<Perfil> perfiles;
 
     @OneToMany(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
     private Set<Balance> balances = new HashSet<>();
 
     @OneToOne(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
     private Subasta subasta;
 
     @OneToMany(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
+
     private Set<Pago> itinerarios = new HashSet<>();
 
     @OneToOne(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
     private Itinerario itinerario;
 
-    public GrupoViaje( String nombre, String descripcion, Date fechaInicio, Date fechaFin, String destino) {
+    public GrupoViaje( String nombre, String descripcion, Date fechaInicio, Date fechaFin, Ciudad destino, LocalTime horaAlmuerzo, LocalTime horaInicioActividades, Integer tiempoParaAlmorzar) {
    
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.fechaInicio = fechaInicio;
         this.fechaFin = fechaFin;
         this.destino = destino;
+        this.horaAlmuerzo = horaAlmuerzo;
+        this.horaInicioActividades = horaInicioActividades;
+        this.tiempoParaAlmorzar = tiempoParaAlmorzar;
     }
 
-    
+
 
     
 }
