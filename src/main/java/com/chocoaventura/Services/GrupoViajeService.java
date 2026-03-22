@@ -21,7 +21,7 @@ import com.chocoaventura.entities.Usuario;
 
 @Service
 public class GrupoViajeService {
-    public GrupoViaje crearGrupoViaje(String nombre, String nombreDestino, String PaisDestino, String direccion, double lat, double longi, Date fechaInicio, Date fechaFin, String descripcion, Usuario usuarioCreador, LocalTime horaAlmuerzo, LocalTime horaInicioActividades,Integer tiempoParaAlmorzar) {
+    public GrupoViaje crearGrupoViaje(String nombre, String nombreDestino, String PaisDestino, String direccion, double lat, double longi, Date fechaInicio, Date fechaFin, String descripcion,LocalTime horaAlmuerzo, LocalTime horaInicioActividades,Integer tiempoParaAlmorzar) {
         /*if (nombre==null){
             try {
                 throw new IllegalArgumentException("El nombre del grupo de viaje no puede ser nulo");
@@ -115,13 +115,50 @@ public class GrupoViajeService {
     usuarioRepository.save(usuario);
 }
 
-    public void invitarUsuarioAGrupoViaje() {
-        // Lógica para invitar a un usuario a un grupo de viaje
-    }   
+    public String generarLinkInvitacion(Long grupoId) {
+        return "chocoaventura://grupo/" + grupoId;
+    }
 
-    public void invitarnuevoUsuarioAGrupoViaje() {
-        // Lógica para invitar a un nuevo usuario a un grupo de viaje
-    }   
+
+    /*
+FLUJO INVITACIÓN CON DEEP LINK (Flutter + Spring Boot)
+
+1. BACKEND (Spring Boot):
+   - Genera link de invitación:
+     chocoaventura://grupo/{grupoId}
+   - Expone endpoint:
+     POST /grupos/unirse
+   - NO maneja navegación ni decisiones de usuario
+
+2. FRONTEND (Flutter):
+   - Recibe el deep link (grupoId)
+
+   - Verifica si el usuario está logueado:
+        - NO logueado:
+            → guardar grupoId
+            → redirigir a login/registro
+            → después del login, continuar flujo
+
+        - SÍ logueado:
+            → ir directo a pantalla "Unirse al grupo"
+
+   - Mostrar formulario para crear Perfil:
+        (presupuesto, categorías, tiempo, etc.)
+
+   - Al enviar:
+        → llamar POST /grupos/unirse con UnirseGrupoDTO
+
+3. IMPORTANTE:
+   - El backend NO decide si el usuario se registra o no
+   - El frontend controla todo el flujo y navegación
+   - El deep link solo indica a qué grupo quiere unirse
+
+4. MVP:
+   - Usar deep links simples
+   - Solo funciona si la app está instalada
+*/
+
+      
 
     public void registrarPago() {
         // Lógica para registrar un pago en un grupo de viaje
