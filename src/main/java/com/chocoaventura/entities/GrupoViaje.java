@@ -65,13 +65,8 @@ public class GrupoViaje {
     public GrupoViaje(String nombre, String descripcion, LocalTime horaInicioActividades, LocalTime horaAlmuerzo, Integer duracionAlmuerzoMin, LocalDateTime fechaHoraLlegada, LocalDateTime fechaHoraSalida, Usuario dueno, Ciudad ciudadDestino) {
         this.nombre = nombre;
         this.descripcion = descripcion;
-        this.horaInicioActividades = horaInicioActividades;
-        this.horaAlmuerzo = horaAlmuerzo;
-        this.duracionAlmuerzoMin = duracionAlmuerzoMin;
         this.fechaHoraLlegada = fechaHoraLlegada;
         this.fechaHoraSalida = fechaHoraSalida;
-        this.dueno = dueno;
         this.ciudadDestino = ciudadDestino;
     }
-
 }

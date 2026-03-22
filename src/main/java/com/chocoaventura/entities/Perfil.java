@@ -31,12 +31,12 @@ public class Perfil {
     @Column(nullable = false)
     private Boolean faseIndividualLista = false; // si ya terminó su exploración individual
 
-    @ManyToOne
-    @JoinColumn(name = "usuario_id", nullable = false)
-    private Usuario usuario; // usuario dueño de este perfil
+    private String codigoVuelo;
 
-    @ManyToOne
-    @JoinColumn(name = "grupo_viaje_id", nullable = false)
+    @OneToMany(mappedBy = "perfil")
+    private Usuario usuario;
+
+    @OneToMany(mappedBy = "perfil", cascade = CascadeType.ALL, orphanRemoval = true)
     private GrupoViaje grupoViaje; // viaje al que pertenece este perfil
 
     @ManyToMany
@@ -70,12 +70,12 @@ public class Perfil {
     @OneToMany(mappedBy = "perfil", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Resena> resenas = new HashSet<>(); // reseñas hechas por este perfil
 
-    public Perfil(Double presupuesto, Integer personasCargo, Integer tiempoDiarioActividades, Usuario usuario, GrupoViaje grupoViaje) {
+    public Perfil(Double presupuesto, Integer personasCargo, Integer tiempoDiarioActividades, Set<Categoria> categoriasPreferidas) {
         this.presupuesto = presupuesto;
         this.personasCargo = personasCargo;
         this.tiempoDiarioActividades = tiempoDiarioActividades;
+        this.categoriasPreferidas = categoriasPreferidas;
         this.faseIndividualLista = false;
-        this.usuario = usuario;
-        this.grupoViaje = grupoViaje;
     }
+
 }

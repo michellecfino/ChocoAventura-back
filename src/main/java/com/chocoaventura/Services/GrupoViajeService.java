@@ -1,8 +1,11 @@
 package com.chocoaventura.Services;
 
-import java.sql.Date;
+
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,7 +24,7 @@ import com.chocoaventura.entities.Usuario;
 
 @Service
 public class GrupoViajeService {
-    public GrupoViaje crearGrupoViaje(String nombre, String nombreDestino, String PaisDestino, String direccion, double lat, double longi, Date fechaInicio, Date fechaFin, String descripcion, Usuario usuarioCreador, LocalTime horaAlmuerzo, LocalTime horaInicioActividades,Integer tiempoParaAlmorzar) {
+    public GrupoViaje crearGrupoViaje(String nombre, String nombreDestino, String PaisDestino, String direccion, double lat, double longi, LocalDateTime fechaInicio, LocalDateTime fechaFin, String descripcion,LocalTime horaAlmuerzo, LocalTime horaInicioActividades,Integer tiempoParaAlmorzar) {
         /*if (nombre==null){
             try {
                 throw new IllegalArgumentException("El nombre del grupo de viaje no puede ser nulo");
@@ -47,7 +50,7 @@ public class GrupoViajeService {
         GrupoViaje grupoViaje = new GrupoViaje(nombre, descripcion, fechaInicio, fechaFin, destino, horaAlmuerzo, horaInicioActividades, tiempoParaAlmorzar);
           /*-------------------------------------------------
             IMPORTANTE 
-            -------------------------------------------------
+            ------------------------------------------------- 
             En esta parte al usuario sde le debe preguntar personalmente:
             sus gustos )categorias que prefiere más para este viaje)
             SU presupuesto para el viaje
@@ -59,7 +62,7 @@ public class GrupoViajeService {
         return grupoViaje;
     }
 
-    public void crearPerfilParGrupoViaje(Usuario usuario, GrupoViaje grupoViaje, List<Categoria> categoriasPreferidas, double presupuesto, int personasACargo, int tiempoDisponible) {
+    public void crearPerfilParGrupoViaje(Usuario usuario, GrupoViaje grupoViaje, Set<Categoria> categoriasPreferidas, double presupuesto, int personasACargo, int tiempoDisponible) {
         // Lógica para crear un perfil para un grupo de viaje
         /*
             ------------------------------------    
@@ -73,11 +76,11 @@ public class GrupoViajeService {
 
         Perfil perfil = new Perfil(presupuesto, personasACargo, tiempoDisponible, categoriasPreferidas);
 
-        List<Perfil> perfiles = grupoViaje.getPerfiles();
+        Set<Perfil> perfiles = grupoViaje.getPerfiles();
         perfiles.add(perfil);   
         grupoViaje.setPerfiles(perfiles);
 
-        List<Perfil> perfilesUsuario = usuario.getPerfiles();       
+        Set<Perfil> perfilesUsuario = usuario.getPerfiles();       
         perfilesUsuario.add(perfil);
         usuario.setPerfiles(perfilesUsuario);
 
@@ -99,12 +102,12 @@ public class GrupoViajeService {
     GrupoViaje grupo = grupoRepository.findById(dto.getGrupoId()).orElseThrow();
 
     List<Categoria> categorias = categoriaRepository.findAllById(dto.getCategoriasIds());
-
+    Set<Categoria> categoriasSet = new HashSet<>(categorias);
    
     crearPerfilParGrupoViaje(
         usuario,
         grupo,
-        categorias,
+        categoriasSet,
         dto.getPresupuesto(),
         dto.getPersonasACargo(),
         dto.getTiempoDisponible()
@@ -115,13 +118,50 @@ public class GrupoViajeService {
     usuarioRepository.save(usuario);
 }
 
-    public void invitarUsuarioAGrupoViaje() {
-        // Lógica para invitar a un usuario a un grupo de viaje
-    }   
+    public String generarLinkInvitacion(Long grupoId) {
+        return "chocoaventura://grupo/" + grupoId;
+    }
 
-    public void invitarnuevoUsuarioAGrupoViaje() {
-        // Lógica para invitar a un nuevo usuario a un grupo de viaje
-    }   
+
+    /*
+FLUJO INVITACIÓN CON DEEP LINK (Flutter + Spring Boot)
+
+1. BACKEND (Spring Boot):
+   - Genera link de invitación:
+     chocoaventura://grupo/{grupoId}
+   - Expone endpoint:
+     POST /grupos/unirse
+   - NO maneja navegación ni decisiones de usuario
+
+2. FRONTEND (Flutter):
+   - Recibe el deep link (grupoId)
+
+   - Verifica si el usuario está logueado:
+        - NO logueado:
+            → guardar grupoId
+            → redirigir a login/registro
+            → después del login, continuar flujo
+
+        - SÍ logueado:
+            → ir directo a pantalla "Unirse al grupo"
+
+   - Mostrar formulario para crear Perfil:
+        (presupuesto, categorías, tiempo, etc.)
+
+   - Al enviar:
+        → llamar POST /grupos/unirse con UnirseGrupoDTO
+
+3. IMPORTANTE:
+   - El backend NO decide si el usuario se registra o no
+   - El frontend controla todo el flujo y navegación
+   - El deep link solo indica a qué grupo quiere unirse
+
+4. MVP:
+   - Usar deep links simples
+   - Solo funciona si la app está instalada
+*/
+
+      
 
     public void registrarPago() {
         // Lógica para registrar un pago en un grupo de viaje
