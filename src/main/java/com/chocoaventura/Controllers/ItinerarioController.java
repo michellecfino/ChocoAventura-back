@@ -4,10 +4,19 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.chocoaventura.entities.Itinerario;
 import com.chocoaventura.Services.ItinerarioService;
+import com.chocoaventura.entities.Itinerario;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @RestController
 @RequestMapping("/itinerarios")
@@ -17,8 +26,8 @@ public class ItinerarioController {
     private ItinerarioService itinerarioService;
 
     @PostMapping
-    public ResponseEntity<Itinerario> create(@RequestBody Itinerario itinerario) {
-        return ResponseEntity.ok(itinerarioService.create(itinerario));
+    public ResponseEntity<Itinerario> create(@PathVariable String nombre, @PathVariable Long grupoViajeId) throws EntityNotFoundException{
+        return ResponseEntity.ok(itinerarioService.crearItinerario(nombre, grupoViajeId));
     }
 
     @GetMapping
