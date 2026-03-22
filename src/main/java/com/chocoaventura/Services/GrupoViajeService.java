@@ -1,4 +1,4 @@
-package com.chocoaventura.Services;
+package com.chocoaventura.services;
 
 
 import java.time.LocalDateTime;
@@ -11,9 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.chocoaventura.DTOs.UnirseGrupoDTO;
-import com.chocoaventura.Repositories.CategoriaRepository;
-import com.chocoaventura.Repositories.GrupoRepository;
-import com.chocoaventura.Repositories.UsuarioRepository;
+import com.chocoaventura.repositories.CategoriaRepository;
+import com.chocoaventura.repositories.GrupoRepository;
+import com.chocoaventura.repositories.UsuarioRepository;
 import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.entities.Categoria;
 import com.chocoaventura.entities.Ciudad;
@@ -24,7 +24,7 @@ import com.chocoaventura.entities.Usuario;
 
 @Service
 public class GrupoViajeService {
-    public GrupoViaje crearGrupoViaje(String nombre, String nombreDestino, String PaisDestino, String direccion, double lat, double longi, LocalDateTime fechaInicio, LocalDateTime fechaFin, String descripcion,LocalTime horaAlmuerzo, LocalTime horaInicioActividades,Integer tiempoParaAlmorzar) {
+    public GrupoViaje crearGrupoViaje(String nombre, String nombreDestino, String PaisDestino, String direccion, double lat, double longi, LocalDateTime fechaInicio, LocalDateTime fechaFin, String descripcion,LocalTime horaAlmuerzo, LocalTime horaInicioActividades,Integer tiempoParaAlmorzar, Long duenoId) {
         /*if (nombre==null){
             try {
                 throw new IllegalArgumentException("El nombre del grupo de viaje no puede ser nulo");
@@ -45,9 +45,11 @@ public class GrupoViajeService {
         en el futuro se puede hacer una votacion para definir la hora del almuerzo y la hora de inicio de las actividades 
         y asi tener una hora más justa para todos los usuarios del grupo de viaje. Por ahora asumamos que son felices y  no pelean
          */
-        Ubicacion estadia = new Ubicacion(nombreDestino,direccion, lat, longi);
-        Ciudad destino = new Ciudad(nombreDestino, PaisDestino,estadia);
-        GrupoViaje grupoViaje = new GrupoViaje(nombre, descripcion, fechaInicio, fechaFin, destino, horaAlmuerzo, horaInicioActividades, tiempoParaAlmorzar);
+        Ubicacion estadia = new Ubicacion(nombreDestino, direccion, lat, longi);
+        Ciudad destino = new Ciudad(nombreDestino, PaisDestino);
+        Usuario dueno = usuarioRepository.findById(duenoId).orElseThrow();
+        GrupoViaje grupoViaje = new GrupoViaje(nombre, descripcion, horaInicioActividades, horaAlmuerzo, tiempoParaAlmorzar, fechaInicio, fechaFin, destino, dueno);
+        grupoViaje.setEstadia(estadia);
           /*-------------------------------------------------
             IMPORTANTE 
             ------------------------------------------------- 
@@ -198,8 +200,4 @@ FLUJO INVITACIÓN CON DEEP LINK (Flutter + Spring Boot)
     public void obtenerItinerarioFinal() {
         // Lógica para obtener el itinerario final del grupo de viaje después de la selección de actividades finales
     }
-
-
-
-
 }

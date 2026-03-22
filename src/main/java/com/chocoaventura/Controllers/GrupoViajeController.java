@@ -1,9 +1,9 @@
-package com.chocoaventura.Controllers;
+package com.chocoaventura.controllers;
 
 import com.chocoaventura.DTOs.CrearGrupoDTO;
 import com.chocoaventura.DTOs.UnirseGrupoDTO;
 import com.chocoaventura.entities.GrupoViaje;
-import com.chocoaventura.Services.GrupoViajeService;
+import com.chocoaventura.services.GrupoViajeService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,25 +18,26 @@ public class GrupoViajeController {
 
     // Crear grupo
     @PostMapping("/crear")
-public ResponseEntity<GrupoViaje> crearGrupo(@RequestBody CrearGrupoDTO dto) {
+    public ResponseEntity<GrupoViaje> crearGrupo(@RequestBody CrearGrupoDTO dto) {
 
-    GrupoViaje grupo = grupoViajeService.crearGrupoViaje(
-        dto.getNombre(),
-        dto.getNombreDestino(),
-        dto.getPaisDestino(),
-        dto.getDireccion(),
-        dto.getLat(),
-        dto.getLongi(),
-        dto.getFechaInicio(),
-        dto.getFechaFin(),
-        dto.getDescripcion(),
-        dto.getHoraAlmuerzo(),
-        dto.getHoraInicioActividades(),
-        dto.getTiempoParaAlmorzar()
-    );
+        GrupoViaje grupo = grupoViajeService.crearGrupoViaje(
+            dto.getNombre(),
+            dto.getNombreDestino(),
+            dto.getPaisDestino(),
+            dto.getDireccion(),
+            dto.getLat(),
+            dto.getLongi(),
+            dto.getFechaInicio(),
+            dto.getFechaFin(),
+            dto.getDescripcion(),
+            dto.getHoraAlmuerzo(),
+            dto.getHoraInicioActividades(),
+            dto.getTiempoParaAlmorzar(),
+            dto.getDuenoId()
+        );
 
-    return ResponseEntity.ok(grupo);
-}
+        return ResponseEntity.ok(grupo);
+    }
 
     //  Unirse a grupo
     @PostMapping("/unirse")

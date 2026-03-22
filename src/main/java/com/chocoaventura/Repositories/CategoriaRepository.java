@@ -1,4 +1,4 @@
-package com.chocoaventura.Repositories;
+package com.chocoaventura.repositories;
 
 import com.chocoaventura.entities.Categoria;
 import org.springframework.data.jpa.repository.JpaRepository;

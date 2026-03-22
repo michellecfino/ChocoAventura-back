@@ -37,8 +37,13 @@ public class Actividad {
 
     private LocalDate vigenciaFin; // hasta cuándo aplica, si tiene rango
 
+    @Column(columnDefinition = "TEXT")
+    private String preciosDetallados; // texto con precios por zonas o tipos
+
+    private String fuente; // de dónde salió la actividad
+
     @ManyToOne
-    @JoinColumn(name = "ciudad_id", nullable = false)
+    @JoinColumn(name = "ciudad_id")
     private Ciudad ciudad; // ciudad donde se hace
 
     @ManyToOne
@@ -74,11 +79,10 @@ public class Actividad {
     @OneToMany(mappedBy = "actividad", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AsignacionTokens> asignacionesTokens = new HashSet<>(); // tokens recibidos
 
-    public Actividad(String nombre, String descripcion, Double costoPorPersona, Integer duracionMin, Ciudad ciudad) {
+    public Actividad(String nombre, String descripcion, Double costoPorPersona, Integer duracionMin) {
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.costoPorPersona = costoPorPersona;
         this.duracionMin = duracionMin;
-        this.ciudad = ciudad;
     }
 }

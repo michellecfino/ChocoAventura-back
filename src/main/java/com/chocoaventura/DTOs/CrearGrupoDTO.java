@@ -26,6 +26,8 @@ public class CrearGrupoDTO {
     private LocalTime horaInicioActividades;
     private Integer tiempoParaAlmorzar;
 
+    private Long duenoId;
+
     public CrearGrupoDTO(String nombre, String descripcion, String nombreDestino, String paisDestino, String direccion,
             double lat, double longi, LocalDateTime fechaInicio, LocalDateTime fechaFin, LocalTime horaAlmuerzo,
             LocalTime horaInicioActividades, Integer tiempoParaAlmorzar) {

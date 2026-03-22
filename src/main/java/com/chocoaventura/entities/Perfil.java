@@ -33,10 +33,12 @@ public class Perfil {
 
     private String codigoVuelo;
 
-    @OneToMany(mappedBy = "perfil")
-    private Usuario usuario;
+    @ManyToOne
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario; // usuario dueño de este perfil
 
-    @OneToMany(mappedBy = "perfil", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToOne
+    @JoinColumn(name = "grupo_viaje_id", nullable = false)
     private GrupoViaje grupoViaje; // viaje al que pertenece este perfil
 
     @ManyToMany
