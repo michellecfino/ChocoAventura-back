@@ -1,4 +1,4 @@
-package com.chocoaventura.services;
+package com.chocoaventura.Services;
 
 import java.util.List;
 
@@ -9,10 +9,10 @@ import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.entities.AsignacionTokens;
 import com.chocoaventura.entities.Perfil;
 import com.chocoaventura.entities.RondaSubasta;
-import com.chocoaventura.repositories.ActividadRepository;
-import com.chocoaventura.repositories.AsignacionTokensRepository;
-import com.chocoaventura.repositories.PerfilRepository;
-import com.chocoaventura.repositories.RondaSubastaRepository;
+import com.chocoaventura.Repositories.ActividadRepository;
+import com.chocoaventura.Repositories.AsignacionTokensRepository;
+import com.chocoaventura.Repositories.PerfilRepository;
+import com.chocoaventura.Repositories.RondaSubastaRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 

@@ -1,4 +1,4 @@
-package com.chocoaventura.controllers;
+package com.chocoaventura.Controllers;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.chocoaventura.entities.Itinerario;
-import com.chocoaventura.services.ItinerarioService;
+import com.chocoaventura.Services.ItinerarioService;
 
 @RestController
 @RequestMapping("/itinerarios")

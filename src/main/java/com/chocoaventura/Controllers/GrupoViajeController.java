@@ -1,11 +1,11 @@
-package com.chocoaventura.controllers;
+package com.chocoaventura.Controllers;
 
 import java.util.List;
 
 import com.chocoaventura.DTOs.CrearGrupoDTO;
 import com.chocoaventura.DTOs.UnirseGrupoDTO;
 import com.chocoaventura.entities.GrupoViaje;
-import com.chocoaventura.services.GrupoViajeService;
+import com.chocoaventura.Services.GrupoViajeService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

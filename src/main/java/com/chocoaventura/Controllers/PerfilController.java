@@ -1,4 +1,4 @@
-package com.chocoaventura.controllers;
+package com.chocoaventura.Controllers;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.chocoaventura.entities.Perfil;
-import com.chocoaventura.services.PerfilService;
+import com.chocoaventura.Services.PerfilService;
 
 @RestController
 @RequestMapping("/perfiles")

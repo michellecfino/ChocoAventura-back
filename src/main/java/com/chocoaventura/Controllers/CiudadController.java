@@ -1,4 +1,4 @@
-package com.chocoaventura.controllers;
+package com.chocoaventura.Controllers;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.chocoaventura.entities.Ciudad;
-import com.chocoaventura.services.CiudadService;
+import com.chocoaventura.Services.CiudadService;
 
 @RestController
 @RequestMapping("/ciudades")
