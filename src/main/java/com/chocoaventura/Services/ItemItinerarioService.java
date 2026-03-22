@@ -69,6 +69,7 @@ public class ItemItinerarioService {
         Actividad actividad = actividadRepository.findById(actividadId).orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada con id: " + actividadId));
 
         ItemItinerario item = new ItemItinerario(inicioProgramado, finProgramado, itinerario, actividad);
+        itinerario.getItems().add(item);
         return itemItinerarioRepository.save(item);
     }
 }
