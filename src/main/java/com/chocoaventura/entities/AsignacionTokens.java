@@ -1,7 +1,6 @@
 package com.chocoaventura.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,7 +10,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class AsignacionTokens {
 
     @Id
@@ -32,4 +30,11 @@ public class AsignacionTokens {
     @ManyToOne
     @JoinColumn(name = "ronda_subasta_id", nullable = false)
     private RondaSubasta rondaSubasta; // ronda en la que se votó
+
+    public AsignacionTokens(Integer tokensAsignados, Perfil perfil, Actividad actividad, RondaSubasta rondaSubasta) {
+        this.tokensAsignados = tokensAsignados;
+        this.perfil = perfil;
+        this.actividad = actividad;
+        this.rondaSubasta = rondaSubasta;
+    }
 }

@@ -1,7 +1,6 @@
 package com.chocoaventura.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,7 +13,6 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Usuario {
 
     @Id
@@ -37,4 +35,10 @@ public class Usuario {
 
     @OneToMany(mappedBy = "dueno", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<GrupoViaje> gruposCreados = new HashSet<>(); // viajes creados por este usuario
+
+    public Usuario(String nombre, String correo, String contrasena) {
+        this.nombre = nombre;
+        this.correo = correo;
+        this.contrasena = contrasena;
+    }
 }

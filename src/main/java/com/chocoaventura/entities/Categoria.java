@@ -1,7 +1,6 @@
 package com.chocoaventura.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,7 +13,6 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Categoria {
 
     @Id
@@ -31,4 +29,9 @@ public class Categoria {
 
     @ManyToMany(mappedBy = "categorias")
     private Set<Actividad> actividades = new HashSet<>(); // actividades con esta categoría
+
+    public Categoria(String nombre, String descripcion) {
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+    }
 }

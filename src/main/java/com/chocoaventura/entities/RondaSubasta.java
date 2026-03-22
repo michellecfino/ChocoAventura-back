@@ -1,7 +1,6 @@
 package com.chocoaventura.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -15,7 +14,6 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class RondaSubasta {
 
     @Id
@@ -45,4 +43,11 @@ public class RondaSubasta {
 
     @OneToMany(mappedBy = "rondaSubasta", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AsignacionTokens> asignacionesTokens = new HashSet<>(); // votos hechos en esta ronda
+
+    public RondaSubasta(LocalDateTime fechaFin, Integer tokensPorPerfil, GrupoViaje grupoViaje) {
+        this.fechaFin = fechaFin;
+        this.tokensPorPerfil = tokensPorPerfil;
+        this.estado = "PENDIENTE";
+        this.grupoViaje = grupoViaje;
+    }
 }

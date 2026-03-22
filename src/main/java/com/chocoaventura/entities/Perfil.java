@@ -1,7 +1,6 @@
 package com.chocoaventura.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,7 +13,6 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Perfil {
 
     @Id
@@ -71,4 +69,13 @@ public class Perfil {
 
     @OneToMany(mappedBy = "perfil", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Resena> resenas = new HashSet<>(); // reseñas hechas por este perfil
+
+    public Perfil(Double presupuesto, Integer personasCargo, Integer tiempoDiarioActividades, Usuario usuario, GrupoViaje grupoViaje) {
+        this.presupuesto = presupuesto;
+        this.personasCargo = personasCargo;
+        this.tiempoDiarioActividades = tiempoDiarioActividades;
+        this.faseIndividualLista = false;
+        this.usuario = usuario;
+        this.grupoViaje = grupoViaje;
+    }
 }

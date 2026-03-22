@@ -1,39 +1,38 @@
 package com.chocoaventura.entities;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-
+import jakarta.persistence.*;
 import lombok.Getter;
-
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "ciudades")
 @Getter
 @Setter
-
+@NoArgsConstructor
 public class Ciudad {
 
     @Id
-    @GeneratedValue
-    private Long id;
-    private String nombre;
-    private String pais;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id; // id de la ciudad
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "ubicacion_id")
-    private Ubicacion ubicacion;
+    @Column(nullable = false)
+    private String nombre; // nombre de la ciudad
 
-    public Ciudad(String nombre, String pais, Ubicacion ubicacion) {
+    @Column(nullable = false)
+    private String pais; // país de la ciudad
+
+    @OneToMany(mappedBy = "ciudad", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Actividad> actividades = new HashSet<>(); // actividades de esta ciudad
+
+    @OneToMany(mappedBy = "ciudadDestino", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<GrupoViaje> gruposDestino = new HashSet<>(); // viajes cuyo destino es esta ciudad
+
+    public Ciudad(String nombre, String pais) {
         this.nombre = nombre;
         this.pais = pais;
-        this.ubicacion = ubicacion;
     }
-
-    
 }
