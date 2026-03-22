@@ -1,6 +1,5 @@
 package com.chocoaventura.services;
 
-
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashSet;
@@ -12,7 +11,8 @@ import org.springframework.stereotype.Service;
 
 import com.chocoaventura.DTOs.UnirseGrupoDTO;
 import com.chocoaventura.repositories.CategoriaRepository;
-import com.chocoaventura.repositories.GrupoRepository;
+import com.chocoaventura.repositories.GrupoViajeRepository;
+import com.chocoaventura.repositories.PerfilRepository;
 import com.chocoaventura.repositories.UsuarioRepository;
 import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.entities.Categoria;
@@ -22,9 +22,66 @@ import com.chocoaventura.entities.Perfil;
 import com.chocoaventura.entities.Ubicacion;
 import com.chocoaventura.entities.Usuario;
 
+import jakarta.persistence.EntityNotFoundException;
+
 @Service
 public class GrupoViajeService {
-    public GrupoViaje crearGrupoViaje(String nombre, String nombreDestino, String PaisDestino, String direccion, double lat, double longi, LocalDateTime fechaInicio, LocalDateTime fechaFin, String descripcion,LocalTime horaAlmuerzo, LocalTime horaInicioActividades,Integer tiempoParaAlmorzar, Long duenoId) {
+
+    @Autowired
+    private GrupoViajeRepository grupoRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private CategoriaRepository categoriaRepository;
+
+    @Autowired
+    private PerfilRepository perfilRepository;
+
+    // =========================
+    // CRUD básico
+    // =========================
+
+    public GrupoViaje create(GrupoViaje grupoViaje) {
+        return grupoRepository.save(grupoViaje);
+    }
+
+    public List<GrupoViaje> getAll() {
+        return grupoRepository.findAll();
+    }
+
+    public GrupoViaje getById(Long id) {
+        return grupoRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Grupo de viaje no encontrado con id: " + id));
+    }
+
+    public GrupoViaje update(Long id, GrupoViaje datos) {
+        GrupoViaje grupo = grupoRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Grupo de viaje no encontrado con id: " + id));
+
+        grupo.setNombre(datos.getNombre());
+        grupo.setDescripcion(datos.getDescripcion());
+        grupo.setHoraInicioActividades(datos.getHoraInicioActividades());
+        grupo.setHoraAlmuerzo(datos.getHoraAlmuerzo());
+        grupo.setDuracionAlmuerzoMin(datos.getDuracionAlmuerzoMin());
+        grupo.setFechaHoraLlegada(datos.getFechaHoraLlegada());
+        grupo.setFechaHoraSalida(datos.getFechaHoraSalida());
+        grupo.setCiudadDestino(datos.getCiudadDestino());
+        grupo.setEstadia(datos.getEstadia());
+        grupo.setDueno(datos.getDueno());
+
+        return grupoRepository.save(grupo);
+    }
+
+    public void delete(Long id) {
+        GrupoViaje grupo = grupoRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Grupo de viaje no encontrado con id: " + id));
+        grupoRepository.delete(grupo);
+    }
+
+    // =========================
+    // Lógica
+    // =========================
+
+    public GrupoViaje crearGrupoViaje(String nombre, String nombreDestino, String PaisDestino, String direccion, double lat, double longi, LocalDateTime fechaInicio, LocalDateTime fechaFin, String descripcion, LocalTime horaAlmuerzo, LocalTime horaInicioActividades, Integer tiempoParaAlmorzar, Long duenoId) {
         /*if (nombre==null){
             try {
                 throw new IllegalArgumentException("El nombre del grupo de viaje no puede ser nulo");
@@ -35,11 +92,11 @@ public class GrupoViajeService {
 
         // puedo hacer las validaciones en el front de que si manden todos los valores y si no mande error y asi en esta parte me ahorro las avalidadicones 
         // La unica que hago aqui es la de descripcion porque es la unica que puede ser nula y si es nula le asigno un valor por defecto para asi evitar errores en el futuro cuando se quiera mostrar la descripcion del grupo de viaje y esta sea nula
-        
 
-        if (descripcion==null) {
-            descripcion = "Este es el viaje para " + nombreDestino + " desde " + fechaInicio.toString() + " hasta " + fechaFin.toString() ;
+        if (descripcion == null) {
+            descripcion = "Este es el viaje para " + nombreDestino + " desde " + fechaInicio.toString() + " hasta " + fechaFin.toString();
         }
+
         /*
         La hora del almuerzo por ahora la define el usuario que crea el grupo de viaje pero 
         en el futuro se puede hacer una votacion para definir la hora del almuerzo y la hora de inicio de las actividades 
@@ -47,10 +104,11 @@ public class GrupoViajeService {
          */
         Ubicacion estadia = new Ubicacion(nombreDestino, direccion, lat, longi);
         Ciudad destino = new Ciudad(nombreDestino, PaisDestino);
-        Usuario dueno = usuarioRepository.findById(duenoId).orElseThrow();
+        Usuario dueno = usuarioRepository.findById(duenoId).orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con id: " + duenoId));
         GrupoViaje grupoViaje = new GrupoViaje(nombre, descripcion, horaInicioActividades, horaAlmuerzo, tiempoParaAlmorzar, fechaInicio, fechaFin, destino, dueno);
         grupoViaje.setEstadia(estadia);
-          /*-------------------------------------------------
+
+        /*-------------------------------------------------
             IMPORTANTE 
             ------------------------------------------------- 
             En esta parte al usuario sde le debe preguntar personalmente:
@@ -60,8 +118,9 @@ public class GrupoViajeService {
             El tiempo que tiene disponible para el viaje para las actividades (para hacer el calculo de las actividades que se pueden hacer en el viaje)
 
             ESTO SE HACE DESPUES DE CREAR EL GRUPO DE VIAJE Y CUANDO EL USUARIO QUIERE UNIRSE A UN GRUPO DE VIAJE 
-             */
-        return grupoViaje;
+         */
+
+        return grupoRepository.save(grupoViaje);
     }
 
     public void crearPerfilParGrupoViaje(Usuario usuario, GrupoViaje grupoViaje, Set<Categoria> categoriasPreferidas, double presupuesto, int personasACargo, int tiempoDisponible) {
@@ -74,56 +133,42 @@ public class GrupoViajeService {
             De nuevo esto va en el front 
             o 
         */
- 
 
         Perfil perfil = new Perfil(presupuesto, personasACargo, tiempoDisponible, categoriasPreferidas);
 
         Set<Perfil> perfiles = grupoViaje.getPerfiles();
-        perfiles.add(perfil);   
+        perfiles.add(perfil);
         grupoViaje.setPerfiles(perfiles);
 
-        Set<Perfil> perfilesUsuario = usuario.getPerfiles();       
+        Set<Perfil> perfilesUsuario = usuario.getPerfiles();
         perfilesUsuario.add(perfil);
         usuario.setPerfiles(perfilesUsuario);
 
         perfil.setGrupoViaje(grupoViaje);
         perfil.setUsuario(usuario);
-
-    }   
-
-    @Autowired
-    private GrupoRepository grupoRepository;
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-    @Autowired
-    private CategoriaRepository categoriaRepository;
+    }
 
     public void unirseAGrupoViaje(UnirseGrupoDTO dto) {
+        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId()).orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con id: " + dto.getUsuarioId()));
+        GrupoViaje grupo = grupoRepository.findById(dto.getGrupoId()).orElseThrow(() -> new EntityNotFoundException("Grupo no encontrado con id: " + dto.getGrupoId()));
 
-    Usuario usuario = usuarioRepository.findById(dto.getUsuarioId()).orElseThrow();
-    GrupoViaje grupo = grupoRepository.findById(dto.getGrupoId()).orElseThrow();
+        if (perfilRepository.existsByUsuarioIdAndGrupoViajeId(dto.getUsuarioId(), dto.getGrupoId())) {
+            throw new IllegalArgumentException("El usuario ya pertenece a este grupo de viaje.");
+        }
 
-    List<Categoria> categorias = categoriaRepository.findAllById(dto.getCategoriasIds());
-    Set<Categoria> categoriasSet = new HashSet<>(categorias);
-   
-    crearPerfilParGrupoViaje(
-        usuario,
-        grupo,
-        categoriasSet,
-        dto.getPresupuesto(),
-        dto.getPersonasACargo(),
-        dto.getTiempoDisponible()
-    );
+        List<Categoria> categorias = categoriaRepository.findAllById(dto.getCategoriasIds());
+        Set<Categoria> categoriasSet = new HashSet<>(categorias);
 
-    // Guardar 
-    grupoRepository.save(grupo);
-    usuarioRepository.save(usuario);
-}
+        crearPerfilParGrupoViaje(usuario, grupo, categoriasSet, dto.getPresupuesto(), dto.getPersonasACargo(), dto.getTiempoDisponible());
+
+        // Guardar 
+        grupoRepository.save(grupo);
+        usuarioRepository.save(usuario);
+    }
 
     public String generarLinkInvitacion(Long grupoId) {
         return "chocoaventura://grupo/" + grupoId;
     }
-
 
     /*
 FLUJO INVITACIÓN CON DEEP LINK (Flutter + Spring Boot)
@@ -163,19 +208,17 @@ FLUJO INVITACIÓN CON DEEP LINK (Flutter + Spring Boot)
    - Solo funciona si la app está instalada
 */
 
-      
-
     public void registrarPago() {
         // Lógica para registrar un pago en un grupo de viaje
-    }   
+    }
 
     public void hacerSubasta() {
         // Lógica para realizar una subasta en un grupo de viaje
-    }   
+    }
 
     public void hacerItinerario() {
         // Lógica para crear un itinerario en un grupo de viaje
-    }   
+    }
 
     public void votarActividad(Usuario usuario, Actividad actividad) {
         // Lógica para votar por una actividad en un grupo de viaje
@@ -191,7 +234,6 @@ FLUJO INVITACIÓN CON DEEP LINK (Flutter + Spring Boot)
         // con el algoritmo que definimos para tener cllaro como se haran esas selecciones de actividades para la subasta
         // Debe depender de una cantidad de días y el presupuesto de cada usuario para asi hacer una selección de actividades más justa para la subasta
     }
-
 
     public void SeleccionarActividadesFinales() {
         // Lógica para seleccionar las actividades finales para el grupo de viaje después de la subasta

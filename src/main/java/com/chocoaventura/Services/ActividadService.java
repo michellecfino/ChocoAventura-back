@@ -1,29 +1,86 @@
 package com.chocoaventura.services;
 
+import com.chocoaventura.entities.Actividad;
+import com.chocoaventura.entities.Imagen;
+import com.chocoaventura.repositories.ActividadRepository;
+import jakarta.persistence.EntityNotFoundException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-
-import com.chocoaventura.repositories.ActividadRepository;
-import com.chocoaventura.entities.Actividad;
-import com.chocoaventura.entities.Imagen;
-
 @Service
 public class ActividadService {
 
-    private final ActividadRepository actividadRepository;
+    @Autowired
+    private ActividadRepository actividadRepository;
 
-    public ActividadService(ActividadRepository actividadRepository) {
-        this.actividadRepository = actividadRepository;
+    // =========================
+    // CRUD básico
+    // =========================
+
+    public Actividad create(Actividad actividad) {
+        if (actividadRepository.existsByNombreIgnoreCase(actividad.getNombre())) {
+            throw new IllegalArgumentException("Ya existe una actividad con ese nombre.");
+        }
+        return actividadRepository.save(actividad);
     }
+
+    public List<Actividad> getAll() {
+        return actividadRepository.findAll();
+    }
+
+    public Actividad getById(Long id) {
+        return actividadRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada con id: " + id));
+    }
+
+    public Actividad update(Long id, Actividad datos) {
+        Actividad actividad = actividadRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada con id: " + id));
+
+        actividad.setNombre(datos.getNombre());
+        actividad.setDescripcion(datos.getDescripcion());
+        actividad.setCostoPorPersona(datos.getCostoPorPersona());
+        actividad.setDuracionMin(datos.getDuracionMin());
+        actividad.setCalificacionPromedio(datos.getCalificacionPromedio());
+        actividad.setVigenciaInicio(datos.getVigenciaInicio());
+        actividad.setVigenciaFin(datos.getVigenciaFin());
+        actividad.setPreciosDetallados(datos.getPreciosDetallados());
+        actividad.setFuente(datos.getFuente());
+        actividad.setCiudad(datos.getCiudad());
+        actividad.setUbicacion(datos.getUbicacion());
+        actividad.setCategorias(datos.getCategorias());
+
+        return actividadRepository.save(actividad);
+    }
+
+    public void delete(Long id) {
+        Actividad actividad = actividadRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Actividad no encontrada con id: " + id));
+        actividadRepository.delete(actividad);
+    }
+
+    // =========================
+    // Consultas útiles MVP
+    // =========================
+
+    public List<Actividad> buscarPorNombre(String texto) {
+        return actividadRepository.findByNombreContainingIgnoreCase(texto);
+    }
+
+    public List<Actividad> actividadesVigentesDesde(LocalDate fecha) {
+        return actividadRepository.findByVigenciaInicioGreaterThanEqual(fecha);
+    }
+
+    // =========================
+    // Scraping
+    // =========================
 
     @Async
     public void actualizarTodo() {
@@ -63,12 +120,7 @@ public class ActividadService {
                     String precios = extraerPreciosDelTexto(cuerpo);
                     String imagenUrl = detalleDoc.select(".field-name-field-imagen-principal img").attr("src");
 
-                    Actividad act = new Actividad(
-                            nombre,
-                            cuerpo,
-                            extraerPrecioMinimo(precios),
-                            60 // duración por defecto mientras no tengamos ese dato real
-                    );
+                    Actividad act = new Actividad(nombre, cuerpo, extraerPrecioMinimo(precios), 60);
 
                     act.setFuente("Idartes");
                     act.setPreciosDetallados(precios.isEmpty() ? "Entrada Libre / Consultar" : precios);
@@ -80,7 +132,6 @@ public class ActividadService {
                     }
 
                     actividadRepository.save(act);
-                    System.out.println("🎭 IDARTES Guardado: " + nombre);
                 }
                 pagina++;
             }
@@ -91,24 +142,15 @@ public class ActividadService {
 
     public void scrapearTuBoleta() {
         try {
-            System.out.println("--- INICIANDO SCRAPER MASIVO TUBOLETA ---");
-            Document sitemap = Jsoup.connect("https://tuboleta.com/sitemap.xml")
-                    .userAgent("Mozilla/5.0")
-                    .timeout(30000)
-                    .get();
+            Document sitemap = Jsoup.connect("https://tuboleta.com/sitemap.xml").userAgent("Mozilla/5.0").timeout(30000).get();
             Elements urls = sitemap.select("loc");
-
-            System.out.println("URLs encontradas en sitemap: " + urls.size());
 
             for (Element loc : urls) {
                 String urlLimpia = loc.text();
 
                 if (urlLimpia.contains("/eventos/") && !urlLimpia.contains("demo") && !urlLimpia.contains("terminos")) {
                     try {
-                        Document doc = Jsoup.connect(urlLimpia.replace("prod.", ""))
-                                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-                                .timeout(15000)
-                                .get();
+                        Document doc = Jsoup.connect(urlLimpia.replace("prod.", "")).userAgent("Mozilla/5.0").timeout(15000).get();
 
                         Element scriptJson = doc.select("script[type=application/ld+json]").first();
                         if (scriptJson == null) {
@@ -116,8 +158,8 @@ public class ActividadService {
                         }
 
                         String json = scriptJson.html();
-
                         String nombre = doc.select("meta[property=og:title]").attr("content").split("\\|")[0].trim();
+
                         if (nombre.isEmpty() || existeEvento(nombre)) {
                             continue;
                         }
@@ -146,16 +188,9 @@ public class ActividadService {
 
                         String imagenUrl = doc.select("meta[property=og:image]").attr("content");
 
-                        Actividad act = new Actividad(
-                                nombre,
-                                doc.select("meta[property=og:description]").attr("content"),
-                                precioMinimo == Double.MAX_VALUE ? 0.0 : precioMinimo,
-                                60 // duración por defecto
-                        );
+                        Actividad act = new Actividad(nombre, doc.select("meta[property=og:description]").attr("content"), precioMinimo == Double.MAX_VALUE ? 0.0 : precioMinimo, 60);
 
-                        act.setPreciosDetallados(
-                                mapaPrecios.toString().isEmpty() ? "Consultar en TuBoleta" : mapaPrecios.toString()
-                        );
+                        act.setPreciosDetallados(mapaPrecios.toString().isEmpty() ? "Consultar en TuBoleta" : mapaPrecios.toString());
                         act.setVigenciaInicio(extraerFechaJson(json, "startDate"));
                         act.setFuente("TuBoleta");
 
@@ -165,7 +200,6 @@ public class ActividadService {
                         }
 
                         actividadRepository.save(act);
-                        System.out.println("🎟️ TUBOLETA Guardado: " + nombre + " (Min: $" + act.getCostoPorPersona() + ")");
 
                     } catch (Exception e) {
                         System.err.println("Error procesando evento: " + urlLimpia);
@@ -179,8 +213,7 @@ public class ActividadService {
 
     public void scrapearBogotaGov() {
         try {
-            Document doc = Jsoup.connect("https://bogota.gov.co/que-hacer/agenda-cultural")
-                    .userAgent("Mozilla/5.0").get();
+            Document doc = Jsoup.connect("https://bogota.gov.co/que-hacer/agenda-cultural").userAgent("Mozilla/5.0").get();
             Elements links = doc.select(".views-field-title a");
 
             for (Element link : links) {
@@ -195,12 +228,7 @@ public class ActividadService {
                 String infoText = det.select(".field-name-body").text();
                 String imagenUrl = det.select("meta[property=og:image]").attr("content");
 
-                Actividad act = new Actividad(
-                        nombre,
-                        infoText,
-                        0.0,
-                        60 // duración por defecto
-                );
+                Actividad act = new Actividad(nombre, infoText, 0.0, 60);
 
                 act.setFuente("Bogotá.gov");
                 act.setVigenciaInicio(LocalDate.now());
@@ -211,7 +239,6 @@ public class ActividadService {
                 }
 
                 actividadRepository.save(act);
-                System.out.println("🏙️ BOG GOV Guardado: " + nombre);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -281,12 +308,7 @@ public class ActividadService {
         }
 
         try {
-            return Pattern.compile("\\d+(\\.\\d+)?")
-                    .matcher(preciosFormateados.replace(".", ""))
-                    .results()
-                    .mapToDouble(m -> Double.parseDouble(m.group()))
-                    .min()
-                    .orElse(0.0);
+            return Pattern.compile("\\d+(\\.\\d+)?").matcher(preciosFormateados.replace(".", "")).results().mapToDouble(m -> Double.parseDouble(m.group())).min().orElse(0.0);
         } catch (Exception e) {
             return 0.0;
         }
@@ -294,9 +316,5 @@ public class ActividadService {
 
     private boolean existeEvento(String nombre) {
         return actividadRepository.existsByNombreIgnoreCase(nombre);
-    }
-
-    public List<Actividad> getAll() {
-        return actividadRepository.findAll();
     }
 }
