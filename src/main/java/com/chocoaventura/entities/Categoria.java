@@ -1,7 +1,10 @@
 package com.chocoaventura.entities;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -12,19 +15,20 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Categoria {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long id; // id de la categoría
 
-    @Column(nullable = false)
-    private String nombre;
+    @Column(nullable = false, unique = true)
+    private String nombre; // nombre de la categoría
 
-    private String descripcion;
+    private String descripcion; // explicación corta
 
-    @OneToMany(mappedBy = "categoria")
-    @Builder.Default
-    private Set<Actividad> actividades = new HashSet<>();
+    @ManyToMany(mappedBy = "categoriasPreferidas")
+    private Set<Perfil> perfilesQueLaPrefieren = new HashSet<>(); // perfiles que prefieren esta categoría
+
+    @ManyToMany(mappedBy = "categorias")
+    private Set<Actividad> actividades = new HashSet<>(); // actividades con esta categoría
 }

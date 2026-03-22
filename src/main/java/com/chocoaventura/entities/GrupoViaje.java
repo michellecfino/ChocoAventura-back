@@ -16,7 +16,6 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class GrupoViaje {
 
     @Id
@@ -63,4 +62,18 @@ public class GrupoViaje {
 
     @OneToMany(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Pago> pagos = new HashSet<>(); // pagos registrados del viaje
+
+    public GrupoViaje(String nombre, String descripcion, LocalTime horaInicioActividades, LocalTime horaAlmuerzo, Integer duracionAlmuerzoMin, LocalDateTime fechaHoraLlegada, LocalDateTime fechaHoraSalida, Usuario dueno, Ciudad ciudadDestino, Ubicacion estadia) {
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.horaInicioActividades = horaInicioActividades;
+        this.horaAlmuerzo = horaAlmuerzo;
+        this.duracionAlmuerzoMin = duracionAlmuerzoMin;
+        this.fechaHoraLlegada = fechaHoraLlegada;
+        this.fechaHoraSalida = fechaHoraSalida;
+        this.dueno = dueno;
+        this.ciudadDestino = ciudadDestino;
+        this.estadia = estadia;
+    }
+
 }
