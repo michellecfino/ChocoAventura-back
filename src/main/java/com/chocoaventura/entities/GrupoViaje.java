@@ -1,7 +1,6 @@
 package com.chocoaventura.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,7 +15,6 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class GrupoViaje {
 
     @Id
@@ -63,4 +61,15 @@ public class GrupoViaje {
 
     @OneToMany(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Pago> pagos = new HashSet<>(); // pagos registrados del viaje
+
+    public GrupoViaje(String nombre, String descripcion, LocalDateTime fechaHoraLlegada, LocalDateTime fechaHoraSalida, Ciudad ciudadDestino, LocalTime horaAlmuerzo, LocalTime horaInicioActividades, Integer duracionAlmuerzoMin) {
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.fechaHoraLlegada = fechaHoraLlegada;
+        this.fechaHoraSalida = fechaHoraSalida;
+        this.ciudadDestino = ciudadDestino;
+        this.horaAlmuerzo = horaAlmuerzo;
+        this.horaInicioActividades = horaInicioActividades;
+        this.duracionAlmuerzoMin = duracionAlmuerzoMin;
+    }
 }

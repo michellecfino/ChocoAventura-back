@@ -1,8 +1,10 @@
 package com.chocoaventura.Services;
 
-import java.sql.Date;
+
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,7 +23,7 @@ import com.chocoaventura.entities.Usuario;
 
 @Service
 public class GrupoViajeService {
-    public GrupoViaje crearGrupoViaje(String nombre, String nombreDestino, String PaisDestino, String direccion, double lat, double longi, Date fechaInicio, Date fechaFin, String descripcion,LocalTime horaAlmuerzo, LocalTime horaInicioActividades,Integer tiempoParaAlmorzar) {
+    public GrupoViaje crearGrupoViaje(String nombre, String nombreDestino, String PaisDestino, String direccion, double lat, double longi, LocalDateTime fechaInicio, LocalDateTime fechaFin, String descripcion,LocalTime horaAlmuerzo, LocalTime horaInicioActividades,Integer tiempoParaAlmorzar) {
         /*if (nombre==null){
             try {
                 throw new IllegalArgumentException("El nombre del grupo de viaje no puede ser nulo");
@@ -47,7 +49,7 @@ public class GrupoViajeService {
         GrupoViaje grupoViaje = new GrupoViaje(nombre, descripcion, fechaInicio, fechaFin, destino, horaAlmuerzo, horaInicioActividades, tiempoParaAlmorzar);
           /*-------------------------------------------------
             IMPORTANTE 
-            -------------------------------------------------
+            ------------------------------------------------- 
             En esta parte al usuario sde le debe preguntar personalmente:
             sus gustos )categorias que prefiere más para este viaje)
             SU presupuesto para el viaje
@@ -73,11 +75,11 @@ public class GrupoViajeService {
 
         Perfil perfil = new Perfil(presupuesto, personasACargo, tiempoDisponible, categoriasPreferidas);
 
-        List<Perfil> perfiles = grupoViaje.getPerfiles();
+        Set<Perfil> perfiles = grupoViaje.getPerfiles();
         perfiles.add(perfil);   
         grupoViaje.setPerfiles(perfiles);
 
-        List<Perfil> perfilesUsuario = usuario.getPerfiles();       
+        Set<Perfil> perfilesUsuario = usuario.getPerfiles();       
         perfilesUsuario.add(perfil);
         usuario.setPerfiles(perfilesUsuario);
 
