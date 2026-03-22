@@ -3,6 +3,7 @@ package com.chocoaventura.Services;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -61,7 +62,7 @@ public class GrupoViajeService {
         return grupoViaje;
     }
 
-    public void crearPerfilParGrupoViaje(Usuario usuario, GrupoViaje grupoViaje, List<Categoria> categoriasPreferidas, double presupuesto, int personasACargo, int tiempoDisponible) {
+    public void crearPerfilParGrupoViaje(Usuario usuario, GrupoViaje grupoViaje, Set<Categoria> categoriasPreferidas, double presupuesto, int personasACargo, int tiempoDisponible) {
         // Lógica para crear un perfil para un grupo de viaje
         /*
             ------------------------------------    
@@ -101,12 +102,12 @@ public class GrupoViajeService {
     GrupoViaje grupo = grupoRepository.findById(dto.getGrupoId()).orElseThrow();
 
     List<Categoria> categorias = categoriaRepository.findAllById(dto.getCategoriasIds());
-
+    Set<Categoria> categoriasSet = new HashSet<>(categorias);
    
     crearPerfilParGrupoViaje(
         usuario,
         grupo,
-        categorias,
+        categoriasSet,
         dto.getPresupuesto(),
         dto.getPersonasACargo(),
         dto.getTiempoDisponible()
