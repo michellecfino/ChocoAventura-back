@@ -3,6 +3,7 @@ package com.chocoaventura.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.sql.Date;
 import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +31,12 @@ public class GrupoViaje {
 
     private LocalTime horaInicioActividades;
 
+    private Date fechaInicio;
+
+    private Date fechaFin;
+
+    private String destino;
+
     private String estadia;
 
      @OneToMany(mappedBy = "grupo")
@@ -49,5 +56,17 @@ public class GrupoViaje {
     @OneToOne(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
     private Itinerario itinerario;
 
+    public GrupoViaje( String nombre, String descripcion, Date fechaInicio, Date fechaFin, String destino) {
+   
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.fechaInicio = fechaInicio;
+        this.fechaFin = fechaFin;
+        this.destino = destino;
+    }
+
+    
+
+    
 }
 

@@ -1,5 +1,7 @@
 package com.chocoaventura.entities;
 
+import java.util.List;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,13 +24,21 @@ public class Perfil {
 
     private Integer tiempo;
 
-    private String telefono;
+    @OneToMany(mappedBy = "perfil")
+    private List<Categoria> categoriasPreferidas;
 
-    @ManyToOne
-    @JoinColumn(name = "usuario_id", nullable = false)
+    @OneToMany(mappedBy = "perfil")
     private Usuario usuario;
 
-    @ManyToOne
-    @JoinColumn(name = "grupo_viaje_id", nullable = false)
+    @OneToMany
     private GrupoViaje grupoViaje;
+
+    public Perfil(Double presupuesto, Integer personasCargo, Integer tiempo, List<Categoria> categoriasPreferidas) {
+        this.presupuesto = presupuesto;
+        this.personasCargo = personasCargo;
+        this.tiempo = tiempo;
+        this.categoriasPreferidas = categoriasPreferidas;
+    }
+
+    
 }
