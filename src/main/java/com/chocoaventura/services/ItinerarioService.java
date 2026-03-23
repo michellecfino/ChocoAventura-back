@@ -2,8 +2,12 @@ package com.chocoaventura.services;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -70,11 +74,12 @@ public class ItinerarioService {
         GrupoViaje grupoViaje = grupoViajeRepository.findById(grupoViajeId).orElseThrow(() -> new EntityNotFoundException("Grupo de viaje no encontrado con id: " + grupoViajeId));
         double [] datos=obtenerPresupuestoHoraPromedio(grupoViaje);
         List<Item> utilidades= puntosPorActividad(grupoViaje);
-        List<Actividad> actividadesSeleccionadas= knapsack2D(utilidades, datos, grupoViaje);
+        List<LocalDate> dias= obtenerDiasValidos(grupoViaje);
+        List<Actividad> actividadesSeleccionadas= knapsack2D(utilidades, datos, dias.size(), grupoViaje);
         
         Itinerario itinerario = new Itinerario(nombre, datos[0], grupoViaje);
         int maxMinutos= (int) Math.round(datos[1] * 60);
-        generarItinerarioOptimizado(grupoViaje, itinerario, actividadesSeleccionadas, maxMinutos);
+        generarItinerario(grupoViaje, itinerario, dias, actividadesSeleccionadas, maxMinutos);
         grupoViajeRepository.save(grupoViaje);
         return itinerarioRepository.save(itinerario);
     }
@@ -121,13 +126,14 @@ public class ItinerarioService {
     public List<Actividad> knapsack2D(
         List<Item> items,
         double[] datos, 
+        int dias,
         GrupoViaje grupoViaje
     ) {
     int n= items.size();
     // DP
     int maxCosto= (int)Math.round(datos[0] * 10);
     int maxMinutos= (int) Math.round(datos[1] * 60);
-    int maxTiempo= maxMinutos* calcularDiasActividades(grupoViaje);
+    int maxTiempo= maxMinutos* dias;
     int[][][] dp= new int[n + 1][maxTiempo + 1][maxCosto + 1];
 
     // Llenado DP
@@ -169,19 +175,82 @@ public class ItinerarioService {
     return seleccionadas;
     }
 
-    public int calcularDiasActividades(GrupoViaje grupoViaje) {
-    LocalDate llegada = grupoViaje.getFechaHoraLlegada().toLocalDate();
-    LocalDate salida = grupoViaje.getFechaHoraSalida().toLocalDate();
-    int dias = (int) ChronoUnit.DAYS.between(llegada, salida);
-    if (grupoViaje.getFechaHoraLlegada().toLocalTime().isAfter(grupoViaje.getHoraInicioActividades())) {
-        dias--;
+    private List<LocalDate> obtenerDiasValidos(GrupoViaje grupo) {
+    List<LocalDate> dias = new ArrayList<>();
+
+    LocalDate inicio = grupo.getFechaHoraLlegada().toLocalDate();
+    LocalDate fin = grupo.getFechaHoraSalida().toLocalDate();
+
+    if (grupo.getFechaHoraLlegada().toLocalTime()
+            .isAfter(grupo.getHoraInicioActividades())) {
+        inicio = inicio.plusDays(1);
     }
 
-    if (grupoViaje.getFechaHoraSalida().toLocalTime().isBefore(grupoViaje.getHoraInicioActividades())) {
-        dias--;
+    if (grupo.getFechaHoraSalida().toLocalTime()
+            .isBefore(grupo.getHoraInicioActividades())) {
+        fin = fin.minusDays(1);
     }
 
-    return Math.max(dias, 0);
+    while (!inicio.isAfter(fin)) {
+        dias.add(inicio);
+        inicio = inicio.plusDays(1);
+    }
+
+    return dias;
+    }
+
+    private Map<LocalDate, List<Actividad>> distribuirActividades(
+        List<Actividad> actividades,
+        List<LocalDate> dias,
+        int minutosPorDia
+    ) {
+
+    Map<LocalDate, List<Actividad>> asignacion = new HashMap<>();
+    Map<LocalDate, Integer> tiempoUsado = new HashMap<>();
+
+    for (LocalDate d : dias) {
+        asignacion.put(d, new ArrayList<>());
+        tiempoUsado.put(d, 0);
+    }
+
+    //ordenar por duración (grandes primero)
+    actividades.sort((a, b) -> b.getDuracionMin() - a.getDuracionMin());
+
+    double alpha= 1.0;   // peso tiempo
+    double beta= 50.0;   // peso distancia (ajustable)
+
+    for (Actividad act : actividades) {
+
+        LocalDate mejorDia = null;
+        double mejorScore = Double.MAX_VALUE;
+
+        for (LocalDate d : dias) {
+
+            int usado = tiempoUsado.get(d);
+            int duracion = act.getDuracionMin();
+
+            if (usado + duracion > minutosPorDia) continue;
+
+            double dist = distanciaPromedio(act, asignacion.get(d));
+
+            double score = alpha * usado + beta * dist;
+
+            if (score < mejorScore) {
+                mejorScore = score;
+                mejorDia = d;
+            }
+        }
+
+        if (mejorDia == null) {
+            throw new RuntimeException("No se pudo asignar actividad");
+        }
+
+        asignacion.get(mejorDia).add(act);
+        tiempoUsado.put(mejorDia,
+                tiempoUsado.get(mejorDia) + act.getDuracionMin());
+    }
+
+    return asignacion;
     }
 
     private List<Actividad> ordenarPorCercania(List<Actividad> actividades) {
@@ -235,85 +304,63 @@ public class ItinerarioService {
     double dist = distancia(a, b);
 
     return (int) Math.round(dist * 6); 
-    // ajusta este factor según ciudad (ej: 100 → minutos)
     }
 
-    public void generarItinerarioOptimizado(
+    private double distanciaPromedio(Actividad act, List<Actividad> actividadesDia) {
+    if (actividadesDia.isEmpty()) return 0;
+
+    double suma = 0;
+
+    for (Actividad a : actividadesDia) {
+        suma += distancia(act, a);
+    }
+
+    return suma / actividadesDia.size();
+    }
+
+    public void generarItinerario(
         GrupoViaje grupo,
         Itinerario itinerario,
+        List<LocalDate> dias,
         List<Actividad> actividades,
         int minutosPorDia
     ) {
 
-    List<Actividad> ordenadas = ordenarPorCercania(actividades);
+    Map<LocalDate, List<Actividad>> asignacion =
+            distribuirActividades(actividades, dias, minutosPorDia);
 
-    LocalDate fechaActual = grupo.getFechaHoraLlegada().toLocalDate();
-    LocalDate fechaFin = grupo.getFechaHoraSalida().toLocalDate();
+    for (LocalDate dia : dias) {
 
-    // 🔥 ajuste por hora de llegada
-    if (grupo.getFechaHoraLlegada().toLocalTime().isAfter(grupo.getHoraInicioActividades())) {
-
-    fechaActual = fechaActual.plusDays(1);
-    }
-
-    int i = 0;
-
-    while (!fechaActual.isAfter(fechaFin) && i < ordenadas.size()) {
+        List<Actividad> actsDia = ordenarPorCercania(asignacion.get(dia));
 
         LocalDateTime cursor = LocalDateTime.of(
-                fechaActual,
+                dia,
                 grupo.getHoraInicioActividades()
         );
 
-        LocalDateTime almuerzoInicio = LocalDateTime.of(
-                fechaActual,
-                grupo.getHoraAlmuerzo()
-        );
+        LocalDateTime almuerzoInicio = LocalDateTime.of(dia, grupo.getHoraAlmuerzo());
+        LocalDateTime almuerzoFin = almuerzoInicio.plusMinutes(grupo.getDuracionAlmuerzoMin());
 
-        LocalDateTime almuerzoFin = almuerzoInicio.plusMinutes(
-                grupo.getDuracionAlmuerzoMin()
-        );
-
-        int tiempoUsado = 0;
         Actividad anterior = null;
 
-        while (i < ordenadas.size()) {
+        for (Actividad act : actsDia) {
 
-            Actividad act = ordenadas.get(i);
-
-            int traslado = 0;
             if (anterior != null) {
-                traslado = calcularTraslado(anterior, act);
+                cursor = cursor.plusMinutes(calcularTraslado(anterior, act));
             }
 
-            int duracionTotal= act.getDuracionMin() + traslado;
+            LocalDateTime fin = cursor.plusMinutes(act.getDuracionMin());
 
-            // 🔥 CORTE POR TIEMPO DIARIO
-            if (tiempoUsado + duracionTotal > minutosPorDia) {
-                break;
-            }
-
-            // 🔥 aplicar traslado al reloj
-            cursor = cursor.plusMinutes(traslado);
-
-            LocalDateTime finActividad= cursor.plusMinutes(act.getDuracionMin());
-
-            // 🔥 manejo de almuerzo
-            if (cursor.isBefore(almuerzoInicio) && finActividad.isAfter(almuerzoInicio)) {
+            if (cursor.isBefore(almuerzoInicio) && fin.isAfter(almuerzoInicio)) {
                 cursor = almuerzoFin;
-                continue;
+                fin = cursor.plusMinutes(act.getDuracionMin());
             }
 
-            // ✅ agregar actividad
-            itemService.agregarActividadAItinerario(cursor, finActividad, itinerario.getId(), act.getId());
+            itemService.agregarActividadAItinerario(cursor, fin, itinerario.getId(), act.getId());
 
-            tiempoUsado += duracionTotal;
-            cursor= finActividad;
+            cursor = fin;
             anterior = act;
-            i++;
         }
-
-        fechaActual = fechaActual.plusDays(1);
     }
     }
 
