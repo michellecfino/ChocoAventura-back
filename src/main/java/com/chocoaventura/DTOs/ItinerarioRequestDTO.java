@@ -7,6 +7,5 @@ import lombok.Setter;
 @Setter
 public class ItinerarioRequestDTO {
     private String nombre;
-    private Double presupuestoPromedioPersona;
     private Long grupoViajeId;
 }

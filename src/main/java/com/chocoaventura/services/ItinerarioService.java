@@ -75,11 +75,12 @@ public class ItinerarioService {
         double [] datos=obtenerPresupuestoHoraPromedio(grupoViaje);
         List<Item> utilidades= puntosPorActividad(grupoViaje);
         List<LocalDate> dias= obtenerDiasValidos(grupoViaje);
-        List<Actividad> actividadesSeleccionadas= knapsack2D(utilidades, datos, dias.size(), grupoViaje);
+        List<Actividad> actividadesSeleccionadas= knapsack2D(utilidades, datos, dias.size());
         
-        Itinerario itinerario = new Itinerario(nombre, datos[0], grupoViaje);
+        Itinerario itinerario= new Itinerario(nombre, datos[0], grupoViaje);
         int maxMinutos= (int) Math.round(datos[1] * 60);
         generarItinerario(grupoViaje, itinerario, dias, actividadesSeleccionadas, maxMinutos);
+        grupoViaje.getItinerarios().add(itinerario);
         grupoViajeRepository.save(grupoViaje);
         return itinerarioRepository.save(itinerario);
     }
@@ -126,8 +127,7 @@ public class ItinerarioService {
     public List<Actividad> knapsack2D(
         List<Item> items,
         double[] datos, 
-        int dias,
-        GrupoViaje grupoViaje
+        int dias
     ) {
     int n= items.size();
     // DP

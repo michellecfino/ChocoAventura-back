@@ -1,5 +1,7 @@
 package com.chocoaventura.DTOs;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,5 +13,5 @@ public class ItinerarioResponseDTO {
     private Long id;
     private String nombre;
     private Double presupuestoPromedioPersona;
-    private GrupoViajeResponseDTO grupoViaje;
+    private List<DiaItinerarioDTO> dias;
 }
