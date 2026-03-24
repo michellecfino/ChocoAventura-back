@@ -15,5 +15,5 @@ public class ItemItinerarioResponseDTO {
     private LocalDateTime finProgramado;
     private String estado;
     private Long itinerarioId;
-    private ActividadResponseDTO actividad;
+    private ActividadItinerarioDTO actividad;
 }

@@ -4,16 +4,24 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.Builder;
+import lombok.AllArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "actividades")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class Actividad {
 
     @Id
@@ -24,6 +32,7 @@ public class Actividad {
     private String nombre; // nombre de la actividad
 
     private String descripcion; // descripción de la actividad
+    private String imagenUrl;
 
     @Column(nullable = false)
     private Double costoPorPersona; // costo estimado por persona
@@ -37,8 +46,11 @@ public class Actividad {
 
     private LocalDate vigenciaFin; // hasta cuándo aplica, si tiene rango
 
-    @Column(columnDefinition = "TEXT")
-    private String preciosDetallados; // texto con precios por zonas o tipos
+    @ElementCollection
+    @CollectionTable(name = "actividad_precios", joinColumns = @JoinColumn(name = "actividad_id"))
+    @MapKeyColumn(name = "localidad")
+    @Column(name = "precio")
+    private Map<String, Double> preciosDetallados = new HashMap<>(); // texto con precios por zonas o tipos
 
     private String fuente; // de dónde salió la actividad
 
@@ -51,14 +63,11 @@ public class Actividad {
     private Ubicacion ubicacion; // ubicación puntual de la actividad
 
     @ManyToMany
-    @JoinTable(
-            name = "actividad_categoria",
-            joinColumns = @JoinColumn(name = "actividad_id"),
-            inverseJoinColumns = @JoinColumn(name = "categoria_id")
-    )
+    @JoinTable(name = "actividad_categoria", joinColumns = @JoinColumn(name = "actividad_id"), inverseJoinColumns = @JoinColumn(name = "categoria_id"))
     private Set<Categoria> categorias = new HashSet<>(); // categorías a las que pertenece
 
     @OneToMany(mappedBy = "actividad", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Imagen> imagenes = new HashSet<>(); // imágenes de la actividad
 
     @OneToMany(mappedBy = "actividad", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -84,5 +93,9 @@ public class Actividad {
         this.descripcion = descripcion;
         this.costoPorPersona = costoPorPersona;
         this.duracionMin = duracionMin;
+    }
+
+    public void setPreciosDetallados(Map<String, Double> preciosDetallados) {
+        this.preciosDetallados = preciosDetallados;
     }
 }
