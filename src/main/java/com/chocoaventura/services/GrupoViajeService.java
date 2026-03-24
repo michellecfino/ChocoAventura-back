@@ -1,7 +1,5 @@
 package com.chocoaventura.services;
 
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -9,13 +7,8 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.chocoaventura.DTOs.CrearGrupoDTO;
 import com.chocoaventura.DTOs.UnirseGrupoDTO;
-import com.chocoaventura.repositories.CategoriaRepository;
-import com.chocoaventura.repositories.CiudadRepository;
-import com.chocoaventura.repositories.GrupoViajeRepository;
-import com.chocoaventura.repositories.PerfilRepository;
-import com.chocoaventura.repositories.UbicacionRepository;
-import com.chocoaventura.repositories.UsuarioRepository;
 import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.entities.Categoria;
 import com.chocoaventura.entities.Ciudad;
@@ -24,6 +17,12 @@ import com.chocoaventura.entities.Perfil;
 import com.chocoaventura.entities.Ubicacion;
 import com.chocoaventura.entities.Usuario;
 import com.chocoaventura.entities.enums.EstadoGrupoViaje;
+import com.chocoaventura.repositories.CategoriaRepository;
+import com.chocoaventura.repositories.CiudadRepository;
+import com.chocoaventura.repositories.GrupoViajeRepository;
+import com.chocoaventura.repositories.PerfilRepository;
+import com.chocoaventura.repositories.UbicacionRepository;
+import com.chocoaventura.repositories.UsuarioRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -92,58 +91,93 @@ public class GrupoViajeService {
     // Lógica
     // =========================
 
-    public GrupoViaje crearGrupoViaje(String nombre, String nombreDestino, String PaisDestino, String direccion, double lat, double longi, LocalDateTime fechaInicio, LocalDateTime fechaFin, String descripcion, LocalTime horaAlmuerzo, LocalTime horaInicioActividades, Integer tiempoParaAlmorzar, Long duenoId) {
-        /*if (nombre==null){
-            try {
-                throw new IllegalArgumentException("El nombre del grupo de viaje no puede ser nulo");
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            }
-        }*/
+    public GrupoViaje crearGrupoViaje(CrearGrupoDTO dto) {
 
-        // puedo hacer las validaciones en el front de que si manden todos los valores y si no mande error y asi en esta parte me ahorro las avalidadicones 
-        // La unica que hago aqui es la de descripcion porque es la unica que puede ser nula y si es nula le asigno un valor por defecto para asi evitar errores en el futuro cuando se quiera mostrar la descripcion del grupo de viaje y esta sea nula
+    String descripcion = dto.getDescripcion();
+    if (descripcion == null) {
+        descripcion = "Viaje a " + dto.getNombreCiudad() +
+                " desde " + dto.getFechaInicio() +
+                " hasta " + dto.getFechaFin();
+    }
 
-        if (descripcion == null) {
-            descripcion = "Este es el viaje para " + nombreDestino + " desde " + fechaInicio.toString() + " hasta " + fechaFin.toString();
-        }
+    //  Validar ciudad
+    if (dto.getNombreCiudad() == null || dto.getPaisCiudad() == null) {
+        throw new IllegalArgumentException("Datos de ciudad incompletos");
+    }
 
-        /*
-        La hora del almuerzo por ahora la define el usuario que crea el grupo de viaje pero 
-        en el futuro se puede hacer una votacion para definir la hora del almuerzo y la hora de inicio de las actividades 
-        y asi tener una hora más justa para todos los usuarios del grupo de viaje. Por ahora asumamos que son felices y  no pelean
-         */
-        List<Ubicacion> estadias =ubicacionRepository.findByDireccionAndLatitudAndLongitudList(direccion, lat, longi);
-        Ubicacion estadia;
+    //  Buscar o crear ciudad
+    List<Ciudad> ciudades = ciudadRepository
+        .findByNombreIgnoreCaseAndPaisIgnoreCase(
+            dto.getNombreCiudad(),
+            dto.getPaisCiudad()
+        );
+
+    Ciudad ciudad;
+
+    if (ciudades.isEmpty()) {
+        ciudad = new Ciudad(
+                dto.getNombreCiudad(),
+                dto.getPaisCiudad()
+        );
+        ciudad = ciudadRepository.save(ciudad);
+    } else {
+        ciudad = ciudades.get(0);
+    }
+
+    //  Estadía opcional
+    Ubicacion estadia = null;
+
+    boolean hayDatosEstadia =
+        dto.getNombreEstadia() != null &&
+        dto.getDireccionEstadia() != null &&
+        dto.getLatEstadia() != null &&
+        dto.getLngEstadia() != null;
+
+    if (hayDatosEstadia) {
+
+        List<Ubicacion> estadias = ubicacionRepository
+            .findByDireccionAndLatitudAndLongitudList(
+                dto.getDireccionEstadia(),
+                dto.getLatEstadia(),
+                dto.getLngEstadia()
+            );
+
         if (estadias.isEmpty()) {
-            estadia = new Ubicacion(nombreDestino, direccion, lat, longi);
+            estadia = new Ubicacion(
+                    dto.getNombreEstadia(),
+                    dto.getDireccionEstadia(),
+                    dto.getLatEstadia(),
+                    dto.getLngEstadia()
+            );
             estadia = ubicacionRepository.save(estadia);
         } else {
             estadia = estadias.get(0);
         }
-        Ciudad destino = ciudadRepository.findByNombreIgnoreCase(nombreDestino).stream().findFirst().orElseGet(() -> {
-            Ciudad nuevaCiudad = new Ciudad(nombreDestino, PaisDestino);
-            return ciudadRepository.save(nuevaCiudad);
-        });
-        Usuario dueno = usuarioRepository.findById(duenoId).orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con id: " + duenoId));
-        GrupoViaje grupoViaje = new GrupoViaje(nombre, descripcion, horaInicioActividades, horaAlmuerzo, tiempoParaAlmorzar, fechaInicio, fechaFin, destino, dueno);
-        grupoViaje.setEstadia(estadia);
-        grupoViaje.setEstado(EstadoGrupoViaje.ABIERTO);
-
-        /*-------------------------------------------------
-            IMPORTANTE 
-            ------------------------------------------------- 
-            En esta parte al usuario sde le debe preguntar personalmente:
-            sus gustos )categorias que prefiere más para este viaje)
-            SU presupuesto para el viaje
-            Cuantas personas tiene acargo ejemplo es un padre con dos hijos tiene a cargo a dos personas (para hacer el calculo)
-            El tiempo que tiene disponible para el viaje para las actividades (para hacer el calculo de las actividades que se pueden hacer en el viaje)
-
-            ESTO SE HACE DESPUES DE CREAR EL GRUPO DE VIAJE Y CUANDO EL USUARIO QUIERE UNIRSE A UN GRUPO DE VIAJE 
-         */
-
-        return grupoRepository.save(grupoViaje);
     }
+
+    //  Usuario
+    Usuario dueno = usuarioRepository.findById(dto.getDuenoId())
+        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+    //  Crear grupo
+    GrupoViaje grupo = new GrupoViaje(
+        dto.getNombre(),
+        descripcion,
+        dto.getHoraInicioActividades(),
+        dto.getHoraAlmuerzo(),
+        dto.getTiempoParaAlmorzar(),
+        dto.getFechaInicio(),
+        dto.getFechaFin(),
+        ciudad,
+        dueno
+    );
+
+    grupo.setEstadia(estadia);
+    grupo.setEstado(EstadoGrupoViaje.ABIERTO);
+
+    return grupoRepository.save(grupo);
+
+}
 
     public Perfil crearPerfilParGrupoViaje(Usuario usuario, GrupoViaje grupoViaje, Set<Categoria> categoriasPreferidas, double presupuesto, int personasACargo, int tiempoDisponible, boolean participaEnCoordinacion) {
         // Lógica para crear un perfil para un grupo de viaje

@@ -1,13 +1,15 @@
 package com.chocoaventura.repositories;
 
-import com.chocoaventura.entities.Ciudad;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
+import com.chocoaventura.entities.Ciudad;
 
 public interface CiudadRepository extends JpaRepository<Ciudad, Long> {
     List<Ciudad> findByNombreIgnoreCase(String nombre);
     List<Ciudad> findByNombreContainingIgnoreCase(String nombre);
     List<Ciudad> findByPaisIgnoreCase(String pais);
+    List<Ciudad> findByNombreIgnoreCaseAndPaisIgnoreCase(String nombre, String pais);
 
 }
