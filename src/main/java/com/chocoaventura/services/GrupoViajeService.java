@@ -11,8 +11,10 @@ import org.springframework.stereotype.Service;
 
 import com.chocoaventura.DTOs.UnirseGrupoDTO;
 import com.chocoaventura.repositories.CategoriaRepository;
+import com.chocoaventura.repositories.CiudadRepository;
 import com.chocoaventura.repositories.GrupoViajeRepository;
 import com.chocoaventura.repositories.PerfilRepository;
+import com.chocoaventura.repositories.UbicacionRepository;
 import com.chocoaventura.repositories.UsuarioRepository;
 import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.entities.Categoria;
@@ -39,6 +41,12 @@ public class GrupoViajeService {
 
     @Autowired
     private PerfilRepository perfilRepository;
+
+    @Autowired
+    private CiudadRepository ciudadRepository;
+
+    @Autowired
+    private UbicacionRepository ubicacionRepository;
 
     // =========================
     // CRUD básico
@@ -105,8 +113,18 @@ public class GrupoViajeService {
         en el futuro se puede hacer una votacion para definir la hora del almuerzo y la hora de inicio de las actividades 
         y asi tener una hora más justa para todos los usuarios del grupo de viaje. Por ahora asumamos que son felices y  no pelean
          */
-        Ubicacion estadia = new Ubicacion(nombreDestino, direccion, lat, longi);
-        Ciudad destino = new Ciudad(nombreDestino, PaisDestino);
+        List<Ubicacion> estadias =ubicacionRepository.findByDireccionAndLatitudAndLongitudList(direccion, lat, longi);
+        Ubicacion estadia;
+        if (estadias.isEmpty()) {
+            estadia = new Ubicacion(nombreDestino, direccion, lat, longi);
+            estadia = ubicacionRepository.save(estadia);
+        } else {
+            estadia = estadias.get(0);
+        }
+        Ciudad destino = ciudadRepository.findByNombreIgnoreCase(nombreDestino).stream().findFirst().orElseGet(() -> {
+            Ciudad nuevaCiudad = new Ciudad(nombreDestino, PaisDestino);
+            return ciudadRepository.save(nuevaCiudad);
+        });
         Usuario dueno = usuarioRepository.findById(duenoId).orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con id: " + duenoId));
         GrupoViaje grupoViaje = new GrupoViaje(nombre, descripcion, horaInicioActividades, horaAlmuerzo, tiempoParaAlmorzar, fechaInicio, fechaFin, destino, dueno);
         grupoViaje.setEstadia(estadia);
