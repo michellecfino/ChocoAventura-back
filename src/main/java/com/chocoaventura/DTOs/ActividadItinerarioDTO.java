@@ -21,5 +21,6 @@ public class ActividadItinerarioDTO {
     private LocalDate vigenciaFin;
     private String preciosDetallados;
     private String fuente;
+    private String direccion;
     private Set<ImagenResponseDTO> imagenes;
 }

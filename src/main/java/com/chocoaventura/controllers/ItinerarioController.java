@@ -1,8 +1,12 @@
 package com.chocoaventura.controllers;
 
 import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,17 +20,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.chocoaventura.DTOs.ActividadItinerarioDTO;
-import com.chocoaventura.DTOs.ActividadResponseDTO;
 import com.chocoaventura.DTOs.DiaItinerarioDTO;
 import com.chocoaventura.DTOs.ImagenResponseDTO;
 import com.chocoaventura.DTOs.ItemItinerarioResponseDTO;
 import com.chocoaventura.DTOs.ItinerarioRequestDTO;
 import com.chocoaventura.DTOs.ItinerarioResponseDTO;
-import com.chocoaventura.services.ItinerarioService;
 import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.entities.Imagen;
 import com.chocoaventura.entities.ItemItinerario;
 import com.chocoaventura.entities.Itinerario;
+import com.chocoaventura.services.ItinerarioService;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -93,6 +96,7 @@ public class ItinerarioController {
             actividad.getVigenciaFin(),
             actividad.getPreciosDetallados(),
             actividad.getFuente(),
+            actividad.getUbicacion().getDireccion(),
             toDTOSet(actividad.getImagenes())
         );
     }
