@@ -1,5 +1,6 @@
 package com.chocoaventura.entities;
 
+import com.chocoaventura.entities.enums.EstadoGrupoViaje;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,48 +20,54 @@ public class GrupoViaje {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // id del viaje grupal
+    private Long id;
 
     @Column(nullable = false)
-    private String nombre; // nombre del viaje
+    private String nombre;
 
-    private String descripcion; // descripción corta del viaje
+    private String descripcion;
 
-    private LocalTime horaInicioActividades; // hora base para empezar actividades
+    private LocalTime horaInicioActividades;
 
-    private LocalTime horaAlmuerzo; // hora estimada para almorzar
+    private LocalTime horaAlmuerzo;
 
-    private Integer duracionAlmuerzoMin; // duración estimada del almuerzo en minutos
-
-    @Column(nullable = false)
-    private LocalDateTime fechaHoraLlegada; // llegada al destino
+    private Integer duracionAlmuerzoMin;
 
     @Column(nullable = false)
-    private LocalDateTime fechaHoraSalida; // salida del destino
+    private LocalDateTime fechaHoraLlegada;
+
+    @Column(nullable = false)
+    private LocalDateTime fechaHoraSalida;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EstadoGrupoViaje estado = EstadoGrupoViaje.ABIERTO;
+
+    private LocalDateTime fechaConfirmacionCoordinacion;
 
     @ManyToOne
     @JoinColumn(name = "dueno_id", nullable = false)
-    private Usuario dueno; // usuario que creó el viaje
+    private Usuario dueno;
 
     @ManyToOne
     @JoinColumn(name = "ciudad_destino_id", nullable = false)
-    private Ciudad ciudadDestino; // ciudad principal del viaje
+    private Ciudad ciudadDestino;
 
     @ManyToOne
     @JoinColumn(name = "estadia_id")
-    private Ubicacion estadia; // lugar donde se hospedan
+    private Ubicacion estadia;
 
     @OneToMany(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Perfil> perfiles = new HashSet<>(); // participantes del viaje
+    private Set<Perfil> perfiles = new HashSet<>();
 
     @OneToMany(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<RondaSubasta> rondasSubasta = new HashSet<>(); // rondas de subasta del viaje
+    private Set<RondaSubasta> rondasSubasta = new HashSet<>();
 
     @OneToMany(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Itinerario> itinerarios = new HashSet<>(); // posibles itinerarios del viaje
+    private Set<Itinerario> itinerarios = new HashSet<>();
 
     @OneToMany(mappedBy = "grupoViaje", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Pago> pagos = new HashSet<>(); // pagos registrados del viaje
+    private Set<Pago> pagos = new HashSet<>();
 
     public GrupoViaje(String nombre, String descripcion, LocalTime horaInicioActividades, LocalTime horaAlmuerzo, Integer duracionAlmuerzoMin, LocalDateTime fechaHoraLlegada, LocalDateTime fechaHoraSalida, Ciudad ciudadDestino, Usuario dueno) {
         this.nombre = nombre;
@@ -72,5 +79,6 @@ public class GrupoViaje {
         this.fechaHoraSalida = fechaHoraSalida;
         this.ciudadDestino = ciudadDestino;
         this.dueno = dueno;
+        this.estado = EstadoGrupoViaje.ABIERTO;
     }
 }

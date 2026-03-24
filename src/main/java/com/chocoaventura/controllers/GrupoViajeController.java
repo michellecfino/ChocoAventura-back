@@ -2,9 +2,13 @@ package com.chocoaventura.controllers;
 
 import java.util.List;
 
+import com.chocoaventura.DTOs.ConfirmarCoordinacionRequestDTO;
 import com.chocoaventura.DTOs.CrearGrupoDTO;
+import com.chocoaventura.DTOs.EstadoExploracionGrupalDTO;
+import com.chocoaventura.DTOs.ExploracionGrupalResponseDTO;
 import com.chocoaventura.DTOs.UnirseGrupoDTO;
 import com.chocoaventura.entities.GrupoViaje;
+import com.chocoaventura.services.ExploracionGrupalService;
 import com.chocoaventura.services.GrupoViajeService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +21,9 @@ public class GrupoViajeController {
 
     @Autowired
     private GrupoViajeService grupoViajeService;
+
+    @Autowired
+    private ExploracionGrupalService exploracionGrupalService;
 
     @PostMapping
     public ResponseEntity<GrupoViaje> create(@RequestBody GrupoViaje grupoViaje) {
@@ -63,5 +70,25 @@ public class GrupoViajeController {
     public ResponseEntity<String> generarLink(@PathVariable Long grupoId) {
         String link = grupoViajeService.generarLinkInvitacion(grupoId);
         return ResponseEntity.ok(link);
+    }
+
+    @GetMapping("/{grupoId}/exploracion-grupal/estado")
+    public ResponseEntity<EstadoExploracionGrupalDTO> obtenerEstadoExploracionGrupal(@PathVariable Long grupoId) {
+        return ResponseEntity.ok(exploracionGrupalService.evaluarEstado(grupoId));
+    }
+
+    @PostMapping("/{grupoId}/exploracion-grupal/confirmar")
+    public ResponseEntity<EstadoExploracionGrupalDTO> confirmarInicioCoordinacion(
+            @PathVariable Long grupoId,
+            @RequestBody ConfirmarCoordinacionRequestDTO dto
+    ) {
+        return ResponseEntity.ok(
+                exploracionGrupalService.confirmarInicioCoordinacion(grupoId, dto.getDuenoId(), Boolean.TRUE.equals(dto.getConfirmar()))
+        );
+    }
+
+    @GetMapping("/{grupoId}/exploracion-grupal")
+    public ResponseEntity<ExploracionGrupalResponseDTO> obtenerExploracionGrupal(@PathVariable Long grupoId) {
+        return ResponseEntity.ok(exploracionGrupalService.obtenerExploracionGrupal(grupoId));
     }
 }

@@ -21,6 +21,7 @@ import com.chocoaventura.entities.GrupoViaje;
 import com.chocoaventura.entities.Perfil;
 import com.chocoaventura.entities.Ubicacion;
 import com.chocoaventura.entities.Usuario;
+import com.chocoaventura.entities.enums.EstadoGrupoViaje;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -56,7 +57,7 @@ public class GrupoViajeService {
     }
 
     public GrupoViaje update(Long id, GrupoViaje datos) {
-        GrupoViaje grupo = grupoRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Grupo de viaje no encontrado con id: " + id));
+        GrupoViaje grupo = getById(id);
 
         grupo.setNombre(datos.getNombre());
         grupo.setDescripcion(datos.getDescripcion());
@@ -68,12 +69,14 @@ public class GrupoViajeService {
         grupo.setCiudadDestino(datos.getCiudadDestino());
         grupo.setEstadia(datos.getEstadia());
         grupo.setDueno(datos.getDueno());
-
+        if (datos.getEstado() != null) {
+            grupo.setEstado(datos.getEstado());
+        }
         return grupoRepository.save(grupo);
     }
 
     public void delete(Long id) {
-        GrupoViaje grupo = grupoRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Grupo de viaje no encontrado con id: " + id));
+        GrupoViaje grupo = getById(id);
         grupoRepository.delete(grupo);
     }
 
@@ -107,6 +110,7 @@ public class GrupoViajeService {
         Usuario dueno = usuarioRepository.findById(duenoId).orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con id: " + duenoId));
         GrupoViaje grupoViaje = new GrupoViaje(nombre, descripcion, horaInicioActividades, horaAlmuerzo, tiempoParaAlmorzar, fechaInicio, fechaFin, destino, dueno);
         grupoViaje.setEstadia(estadia);
+        grupoViaje.setEstado(EstadoGrupoViaje.ABIERTO);
 
         /*-------------------------------------------------
             IMPORTANTE 
@@ -123,7 +127,7 @@ public class GrupoViajeService {
         return grupoRepository.save(grupoViaje);
     }
 
-    public void crearPerfilParGrupoViaje(Usuario usuario, GrupoViaje grupoViaje, Set<Categoria> categoriasPreferidas, double presupuesto, int personasACargo, int tiempoDisponible) {
+    public Perfil crearPerfilParGrupoViaje(Usuario usuario, GrupoViaje grupoViaje, Set<Categoria> categoriasPreferidas, double presupuesto, int personasACargo, int tiempoDisponible, boolean participaEnCoordinacion) {
         // Lógica para crear un perfil para un grupo de viaje
         /*
             ------------------------------------    
@@ -135,17 +139,16 @@ public class GrupoViajeService {
         */
 
         Perfil perfil = new Perfil(presupuesto, personasACargo, tiempoDisponible, categoriasPreferidas);
-
-        Set<Perfil> perfiles = grupoViaje.getPerfiles();
-        perfiles.add(perfil);
-        grupoViaje.setPerfiles(perfiles);
-
-        Set<Perfil> perfilesUsuario = usuario.getPerfiles();
-        perfilesUsuario.add(perfil);
-        usuario.setPerfiles(perfilesUsuario);
-
         perfil.setGrupoViaje(grupoViaje);
         perfil.setUsuario(usuario);
+        perfil.setParticipaEnCoordinacion(participaEnCoordinacion);
+        if (!participaEnCoordinacion) {
+            perfil.setFaseIndividualLista(true);
+        }
+
+        grupoViaje.getPerfiles().add(perfil);
+        usuario.getPerfiles().add(perfil);
+        return perfil;
     }
 
     public void unirseAGrupoViaje(UnirseGrupoDTO dto) {
@@ -156,12 +159,22 @@ public class GrupoViajeService {
             throw new IllegalArgumentException("El usuario ya pertenece a este grupo de viaje.");
         }
 
-        List<Categoria> categorias = categoriaRepository.findAllById(dto.getCategoriasIds());
+        List<Categoria> categorias = dto.getCategoriasIds() == null ? List.of() : categoriaRepository.findAllById(dto.getCategoriasIds());
         Set<Categoria> categoriasSet = new HashSet<>(categorias);
 
-        crearPerfilParGrupoViaje(usuario, grupo, categoriasSet, dto.getPresupuesto(), dto.getPersonasACargo(), dto.getTiempoDisponible());
+        boolean participaEnCoordinacion = grupo.getEstado() == EstadoGrupoViaje.ABIERTO
+                || grupo.getEstado() == EstadoGrupoViaje.CONFIRMACION_GRUPAL_PENDIENTE;
 
-        // Guardar 
+        crearPerfilParGrupoViaje(
+                usuario,
+                grupo,
+                categoriasSet,
+                dto.getPresupuesto(),
+                dto.getPersonasACargo(),
+                dto.getTiempoDisponible(),
+                participaEnCoordinacion
+        );
+
         grupoRepository.save(grupo);
         usuarioRepository.save(usuario);
     }

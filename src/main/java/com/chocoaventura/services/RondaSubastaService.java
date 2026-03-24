@@ -1,31 +1,25 @@
 package com.chocoaventura.services;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.chocoaventura.entities.GrupoViaje;
 import com.chocoaventura.entities.RondaSubasta;
 import com.chocoaventura.repositories.GrupoViajeRepository;
 import com.chocoaventura.repositories.RondaSubastaRepository;
-
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class RondaSubastaService {
 
     @Autowired
     private RondaSubastaRepository rondaSubastaRepository;
-
+    
     @Autowired
     private GrupoViajeRepository grupoViajeRepository;
-
-    // =========================
-    // CRUD básico
-    // =========================
 
     public RondaSubasta create(RondaSubasta rondaSubasta) {
         return rondaSubastaRepository.save(rondaSubasta);
@@ -36,41 +30,39 @@ public class RondaSubastaService {
     }
 
     public RondaSubasta getById(Long id) {
-        return rondaSubastaRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Ronda de subasta no encontrada con id: " + id));
+        return rondaSubastaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Ronda de subasta no encontrada con id: " + id));
     }
 
     public RondaSubasta update(Long id, RondaSubasta datos) {
-        RondaSubasta ronda = rondaSubastaRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Ronda de subasta no encontrada con id: " + id));
-
+        RondaSubasta ronda = getById(id);
         ronda.setFechaFin(datos.getFechaFin());
         ronda.setEstado(datos.getEstado());
         ronda.setTokensPorPerfil(datos.getTokensPorPerfil());
         ronda.setGrupoViaje(datos.getGrupoViaje());
         ronda.setActividadesSubasta(datos.getActividadesSubasta());
-
+        ronda.setNumeroRonda(datos.getNumeroRonda());
+        ronda.setBloqueInicio(datos.getBloqueInicio());
+        ronda.setBloqueFin(datos.getBloqueFin());
         return rondaSubastaRepository.save(ronda);
     }
 
     public void delete(Long id) {
-        RondaSubasta ronda = rondaSubastaRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Ronda de subasta no encontrada con id: " + id));
-        rondaSubastaRepository.delete(ronda);
+        rondaSubastaRepository.delete(getById(id));
     }
 
-    // =========================
-    // Lógica
-    // =========================
+    public RondaSubasta crearRondaParaGrupo(Long grupoId, Integer numeroRonda, LocalDate bloqueInicio, LocalDate bloqueFin, LocalDateTime fechaFin) {
+        GrupoViaje grupo = grupoViajeRepository.findById(grupoId)
+                .orElseThrow(() -> new EntityNotFoundException("Grupo de viaje no encontrado con id: " + grupoId));
 
-    public RondaSubasta crearRondaParaGrupo(Long grupoId, LocalDateTime fechaFin) {
-        GrupoViaje grupo = grupoViajeRepository.findById(grupoId).orElseThrow(() -> new EntityNotFoundException("Grupo de viaje no encontrado con id: " + grupoId));
-
-        long dias = ChronoUnit.DAYS.between(grupo.getFechaHoraLlegada().toLocalDate(), grupo.getFechaHoraSalida().toLocalDate());
-        if (dias <= 0) {
-            dias = 1;
+        long diasBloque = java.time.temporal.ChronoUnit.DAYS.between(bloqueInicio, bloqueFin) + 1;
+        if (diasBloque <= 0) {
+            diasBloque = 1;
         }
 
-        int tokensPorPerfil = (int) dias * 5;
-        RondaSubasta ronda = new RondaSubasta(fechaFin, tokensPorPerfil, grupo);
-
+        int tokensPorPerfil = (int) diasBloque * 5;
+        RondaSubasta ronda = new RondaSubasta(numeroRonda, bloqueInicio, bloqueFin, fechaFin, tokensPorPerfil, grupo);
+        ronda.setEstado("GENERADA");
         return rondaSubastaRepository.save(ronda);
     }
 }
