@@ -94,7 +94,7 @@ public class ItinerarioController {
             actividad.getCalificacionPromedio(),
             actividad.getVigenciaInicio(),
             actividad.getVigenciaFin(),
-            actividad.getPreciosDetallados(),
+            actividad.getPreciosDetallados().toString(),
             actividad.getFuente(),
             actividad.getUbicacion().getDireccion(),
             toDTOSet(actividad.getImagenes())
