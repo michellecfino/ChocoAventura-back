@@ -21,12 +21,25 @@ public class ActividadController {
         return ResponseEntity.ok(actividadService.create(actividad));
     }
 
-    @GetMapping
+    @GetMapping("/si")
     public List<Actividad> getActividades() {
         return actividadService.getAll();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/scrapear")
+    public String scrapear() {
+        actividadService.actualizarTodo();
+
+        return "OY EL CODIGO NUEVO 2026";
+    }
+
+    @GetMapping("/scrapear/tuboleta")
+    public String scrapearTuboleta() {
+        actividadService.scrapearTuBoleta();
+        return "Scraping de Tuboleta iniciado. Revisa la consola.";
+    }
+
+    @GetMapping("/{id:[0-9]+}")
     public ResponseEntity<Actividad> getById(@PathVariable Long id) {
         return ResponseEntity.ok(actividadService.getById(id));
     }
@@ -42,9 +55,11 @@ public class ActividadController {
         return ResponseEntity.ok("Actividad eliminada correctamente");
     }
 
-    @GetMapping("/scrapear")
-    public String scrapear() {
-        actividadService.scrapearIdartes();
-        return "OY EL CODIGO NUEVO 2026";
+    //método para borrar todo
+    @DeleteMapping("/borrar-todo")
+    public ResponseEntity<String> deleteAll() {
+        actividadService.deleteAll();
+        return ResponseEntity.ok("Todas las actividades eliminadas correctamente");
     }
+
 }

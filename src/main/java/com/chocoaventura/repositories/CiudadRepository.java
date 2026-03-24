@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CiudadRepository extends JpaRepository<Ciudad, Long> {
-    Optional<Ciudad> findByNombreIgnoreCase(String nombre);
+    List<Ciudad> findByNombreIgnoreCase(String nombre);
     List<Ciudad> findByNombreContainingIgnoreCase(String nombre);
     List<Ciudad> findByPaisIgnoreCase(String pais);
+
 }
