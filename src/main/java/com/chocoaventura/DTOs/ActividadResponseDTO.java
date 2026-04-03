@@ -1,6 +1,7 @@
 package com.chocoaventura.DTOs;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 import lombok.AllArgsConstructor;
@@ -21,6 +22,12 @@ public class ActividadResponseDTO {
     private LocalDate vigenciaFin;
     private String preciosDetallados;
     private String fuente;
+    private String fuenteUrl;
+    private String imagenUrl;
+    private String categoria;
+    private Double latitud;
+    private Double longitud;
+    private LocalDateTime fechaCreacion;
     private CiudadResponseDTO ciudad;
     private UbicacionResponseDTO ubicacion;
     private Set<CategoriaResponseDTO> categorias;

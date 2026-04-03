@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.chocoaventura.DTOs.ActividadResponseDTO;
 import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.services.ActividadService;
 
@@ -21,9 +22,9 @@ public class ActividadController {
         return ResponseEntity.ok(actividadService.create(actividad));
     }
 
-    @GetMapping("/si")
-    public List<Actividad> getActividades() {
-        return actividadService.getAll();
+    @GetMapping
+    public List<ActividadResponseDTO> getActividades() {
+        return actividadService.getAllDTOs();
     }
 
     @GetMapping("/scrapear")
@@ -33,15 +34,11 @@ public class ActividadController {
         return "OY EL CODIGO NUEVO 2026";
     }
 
-    @GetMapping("/scrapear/tuboleta")
-    public String scrapearTuboleta() {
-        actividadService.scrapearTuBoleta();
-        return "Scraping de Tuboleta iniciado. Revisa la consola.";
-    }
-
     @GetMapping("/{id:[0-9]+}")
-    public ResponseEntity<Actividad> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(actividadService.getById(id));
+    public ResponseEntity<ActividadResponseDTO> getById(@PathVariable Long id) {
+        Actividad actividad = actividadService.getById(id);
+        ActividadResponseDTO dto = actividadService.mapToDTO(actividad);
+        return ResponseEntity.ok(dto);
     }
 
     @PutMapping("/{id}")
