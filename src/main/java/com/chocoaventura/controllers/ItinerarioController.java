@@ -127,8 +127,39 @@ public class ItinerarioController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Itinerario> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(itinerarioService.getById(id));
+    public ItinerarioResponseDTO getById(@PathVariable Long id) {
+        Itinerario itinerario= itinerarioService.getById(id);
+        Map<LocalDate, List<ItemItinerario>> agrupado = new LinkedHashMap<>();
+
+    for (ItemItinerario item : itinerario.getItems()) {
+        LocalDate fecha = item.getInicioProgramado().toLocalDate();
+        agrupado.computeIfAbsent(fecha, k -> new ArrayList<>()).add(item);
+    }
+
+    // 🔹 CONVERTIR A DTO
+    List<DiaItinerarioDTO> dias = new ArrayList<>();
+
+    for (Map.Entry<LocalDate, List<ItemItinerario>> entry : agrupado.entrySet()) {
+
+        List<ItemItinerarioResponseDTO> itemsDTO = entry.getValue().stream()
+            .map(item -> new ItemItinerarioResponseDTO(
+                item.getId(),
+                item.getInicioProgramado(),
+                item.getFinProgramado(),
+                item.getEstado(),
+                item.getItinerario().getId(),
+                actividadtoDTO(item.getActividad())
+            ))
+            .toList();
+
+        dias.add(new DiaItinerarioDTO(entry.getKey(), itemsDTO));
+    }
+    return new ItinerarioResponseDTO(
+        itinerario.getId(),
+        itinerario.getNombre(),
+        itinerario.getPresupuestoPromedioPersona(),
+        dias
+    );
     }
 
     @PutMapping("/{id}")

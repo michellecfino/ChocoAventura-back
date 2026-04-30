@@ -1,7 +1,8 @@
 package com.chocoaventura.DTOs;
 
-import lombok.Data;
 import java.util.List;
+
+import lombok.Data;
 
 @Data
 public class UnirseGrupoDTO {
@@ -13,5 +14,4 @@ public class UnirseGrupoDTO {
     private List<Long> categoriasIds;
     private double presupuesto;
     private int personasACargo;
-    private int tiempoDisponible;
 }

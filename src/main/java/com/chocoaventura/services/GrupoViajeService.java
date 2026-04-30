@@ -223,7 +223,7 @@ public class GrupoViajeService {
                 categoriasSet,
                 dto.getPresupuesto(),
                 dto.getPersonasACargo(),
-                dto.getTiempoDisponible(),
+                8,
                 participaEnCoordinacion
         );
 
