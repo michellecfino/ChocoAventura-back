@@ -45,6 +45,18 @@ public class PagoService {
         pago.setMontoTotal(datos.getMontoTotal());
         pago.setFecha(datos.getFecha());
         pago.setGrupoViaje(datos.getGrupoViaje());
+        if (datos.getCategoria() != null) {
+            pago.setCategoria(datos.getCategoria());
+        }
+        if (datos.getTipoGasto() != null) {
+            pago.setTipoGasto(datos.getTipoGasto());
+        }
+        if (datos.getNota() != null) {
+            pago.setNota(datos.getNota());
+        }
+        if (datos.getDetalleDivision() != null) {
+            pago.setDetalleDivision(datos.getDetalleDivision());
+        }
 
         return pagoRepository.save(pago);
     }
