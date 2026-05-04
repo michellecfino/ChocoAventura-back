@@ -6,8 +6,9 @@ services:
       POSTGRES_DB: chocoaventura_db
       POSTGRES_USER: choco
       POSTGRES_PASSWORD: lala
+      POSTGRES_HOST_AUTH_METHOD: md5
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

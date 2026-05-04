@@ -136,7 +136,7 @@ public class GrupoViajeService {
     if (hayDatosEstadia) {
 
         List<Ubicacion> estadias = ubicacionRepository
-            .findByDireccionAndLatitudAndLongitudList(
+            .findByDireccionAndLatitudAndLongitud(
                 dto.getDireccionEstadia(),
                 dto.getLatEstadia(),
                 dto.getLngEstadia()

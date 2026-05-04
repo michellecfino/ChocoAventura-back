@@ -59,4 +59,13 @@ public class UsuarioService {
     public boolean existePorCorreo(String correo) {
         return usuarioRepository.existsByCorreo(correo);
     }
+
+    public Usuario login(String correo, String contrasena) {
+        Usuario usuario = usuarioRepository.findByCorreo(correo)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Correo o contraseña incorrectos."));
+        if (!usuario.getContrasena().equals(contrasena)) {
+            throw new jakarta.persistence.EntityNotFoundException("Correo o contraseña incorrectos.");
+        }
+        return usuario;
+    }
 }
