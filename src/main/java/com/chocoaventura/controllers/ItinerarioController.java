@@ -9,7 +9,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.chocoaventura.DTOs.ActividadItinerarioDTO;
@@ -30,6 +33,7 @@ import com.chocoaventura.entities.Imagen;
 import com.chocoaventura.entities.ItemItinerario;
 import com.chocoaventura.entities.Itinerario;
 import com.chocoaventura.services.ItinerarioService;
+import com.chocoaventura.repositories.ItinerarioRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -40,14 +44,22 @@ public class ItinerarioController {
     @Autowired
     private ItinerarioService itinerarioService;
 
+    @Autowired
+    private ItinerarioRepository itinerarioRepository;
+
     @PostMapping
     public ItinerarioResponseDTO create(@RequestBody ItinerarioRequestDTO request)
         throws EntityNotFoundException {
 
-    Itinerario itinerario = itinerarioService.crearItinerario(
-        request.getNombre(),
-        request.getGrupoViajeId()
-    );
+    Itinerario itinerario;
+    try {
+        itinerario = itinerarioService.crearItinerario(
+            request.getNombre(),
+            request.getGrupoViajeId()
+        );
+    } catch (IllegalStateException | IllegalArgumentException e) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+    }
     Map<LocalDate, List<ItemItinerario>> agrupado = new LinkedHashMap<>();
 
     for (ItemItinerario item : itinerario.getItems()) {
@@ -94,9 +106,9 @@ public class ItinerarioController {
             actividad.getCalificacionPromedio(),
             actividad.getVigenciaInicio(),
             actividad.getVigenciaFin(),
-            actividad.getPreciosDetallados().toString(),
+            actividad.getPreciosDetallados() == null ? "{}" : actividad.getPreciosDetallados().toString(),
             actividad.getFuente(),
-            actividad.getUbicacion().getDireccion(),
+            actividad.getUbicacion() == null ? "" : actividad.getUbicacion().getDireccion(),
             toDTOSet(actividad.getImagenes())
         );
     }
@@ -121,45 +133,74 @@ public class ItinerarioController {
     return images;
     }
 
+
+    private ItinerarioResponseDTO toResponseDTO(Itinerario itinerario) {
+        Map<LocalDate, List<ItemItinerario>> agrupado = new LinkedHashMap<>();
+
+        for (ItemItinerario item : itinerario.getItems()) {
+            LocalDate fecha = item.getInicioProgramado().toLocalDate();
+            agrupado.computeIfAbsent(fecha, k -> new ArrayList<>()).add(item);
+        }
+
+        List<DiaItinerarioDTO> dias = new ArrayList<>();
+
+        for (Map.Entry<LocalDate, List<ItemItinerario>> entry : agrupado.entrySet()) {
+            List<ItemItinerarioResponseDTO> itemsDTO = entry.getValue().stream()
+                .map(item -> new ItemItinerarioResponseDTO(
+                    item.getId(),
+                    item.getInicioProgramado(),
+                    item.getFinProgramado(),
+                    item.getEstado(),
+                    item.getItinerario().getId(),
+                    actividadtoDTO(item.getActividad())
+                ))
+                .toList();
+            dias.add(new DiaItinerarioDTO(entry.getKey(), itemsDTO));
+        }
+
+        return new ItinerarioResponseDTO(
+            itinerario.getId(),
+            itinerario.getNombre(),
+            itinerario.getPresupuestoPromedioPersona(),
+            dias
+        );
+    }
+
     @GetMapping
-    public List<Itinerario> getAll() {
-        return itinerarioService.getAll();
+    public ResponseEntity<String> getAll() {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body("Use /itinerarios/usuarios/{usuarioId}. Los itinerarios son información privada del usuario autenticado.");
+    }
+
+    @GetMapping("/usuarios/{usuarioId}")
+    public List<ItinerarioResponseDTO> getByUsuario(@PathVariable Long usuarioId) {
+        return itinerarioRepository.findByUsuarioParticipante(usuarioId)
+            .stream()
+            .map(this::toResponseDTO)
+            .toList();
+    }
+
+
+    @GetMapping("/grupos/{grupoId}/actual")
+    public ItinerarioResponseDTO getActualPorGrupo(
+            @PathVariable Long grupoId,
+            @RequestParam(name = "usuarioId", required = false) Long usuarioId) {
+        Itinerario itinerario = itinerarioService.obtenerItinerarioActualPorGrupo(grupoId);
+        if (usuarioId != null && !itinerarioRepository.existsByIdAndUsuarioParticipante(itinerario.getId(), usuarioId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El itinerario no pertenece al usuario indicado");
+        }
+        return toResponseDTO(itinerario);
     }
 
     @GetMapping("/{id}")
-    public ItinerarioResponseDTO getById(@PathVariable Long id) {
-        Itinerario itinerario= itinerarioService.getById(id);
-        Map<LocalDate, List<ItemItinerario>> agrupado = new LinkedHashMap<>();
-
-    for (ItemItinerario item : itinerario.getItems()) {
-        LocalDate fecha = item.getInicioProgramado().toLocalDate();
-        agrupado.computeIfAbsent(fecha, k -> new ArrayList<>()).add(item);
-    }
-
-    // 🔹 CONVERTIR A DTO
-    List<DiaItinerarioDTO> dias = new ArrayList<>();
-
-    for (Map.Entry<LocalDate, List<ItemItinerario>> entry : agrupado.entrySet()) {
-
-        List<ItemItinerarioResponseDTO> itemsDTO = entry.getValue().stream()
-            .map(item -> new ItemItinerarioResponseDTO(
-                item.getId(),
-                item.getInicioProgramado(),
-                item.getFinProgramado(),
-                item.getEstado(),
-                item.getItinerario().getId(),
-                actividadtoDTO(item.getActividad())
-            ))
-            .toList();
-
-        dias.add(new DiaItinerarioDTO(entry.getKey(), itemsDTO));
-    }
-    return new ItinerarioResponseDTO(
-        itinerario.getId(),
-        itinerario.getNombre(),
-        itinerario.getPresupuestoPromedioPersona(),
-        dias
-    );
+    public ItinerarioResponseDTO getById(
+            @PathVariable Long id,
+            @RequestParam(name = "usuarioId", required = false) Long usuarioId) {
+        if (usuarioId != null && !itinerarioRepository.existsByIdAndUsuarioParticipante(id, usuarioId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El itinerario no pertenece al usuario indicado");
+        }
+        Itinerario itinerario = itinerarioService.getById(id);
+        return toResponseDTO(itinerario);
     }
 
     @PutMapping("/{id}")

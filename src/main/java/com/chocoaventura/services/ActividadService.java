@@ -1,11 +1,14 @@
 package com.chocoaventura.services;
 
 import com.chocoaventura.entities.Actividad;
+import com.chocoaventura.entities.Categoria;
 import com.chocoaventura.entities.Ciudad;
 import com.chocoaventura.entities.Imagen;
+import com.chocoaventura.entities.Perfil;
 import com.chocoaventura.entities.Ubicacion;
 import com.chocoaventura.repositories.ActividadRepository;
 import com.chocoaventura.repositories.CiudadRepository;
+import com.chocoaventura.repositories.PerfilRepository;
 import com.chocoaventura.repositories.UbicacionRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -18,10 +21,17 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,6 +52,9 @@ public class ActividadService {
     @Autowired
     private CiudadRepository ciudadRepository;
 
+    @Autowired
+    private PerfilRepository perfilRepository;
+
     // =========================
     // CRUD básico
     // =========================
@@ -55,6 +68,153 @@ public class ActividadService {
 
     public List<Actividad> getAll() {
         return actividadRepository.findAll();
+    }
+
+    public List<Actividad> getActividadesParaSwipe(
+            String destinoKey,
+            Long grupoViajeId,
+            Long usuarioId,
+            List<Long> categoriaIds,
+            List<String> categorias,
+            boolean usarPreferenciasPerfil
+    ) {
+        List<Actividad> actividades = actividadRepository.findAll();
+
+        String destinoNormalizado = normalizar(destinoKey);
+        if (!destinoNormalizado.isBlank()) {
+            List<Actividad> porDestino = actividades.stream()
+                    .filter(a -> coincideDestino(a, destinoNormalizado))
+                    .toList();
+            if (!porDestino.isEmpty()) {
+                actividades = porDestino;
+            }
+        }
+
+        Perfil perfil = resolverPerfil(grupoViajeId, usuarioId);
+
+        Set<Long> categoriaIdsFiltro = new HashSet<>();
+        if (categoriaIds != null) {
+            categoriaIds.stream().filter(Objects::nonNull).forEach(categoriaIdsFiltro::add);
+        }
+
+        Set<String> categoriasFiltro = categorias == null ? Set.of() : categorias.stream()
+                .filter(Objects::nonNull)
+                .flatMap(c -> Arrays.stream(c.split(",")))
+                .map(this::normalizar)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toSet());
+
+        boolean hayFiltroCategoriaExplicito = !categoriaIdsFiltro.isEmpty() || !categoriasFiltro.isEmpty();
+
+        if (hayFiltroCategoriaExplicito) {
+            actividades = actividades.stream()
+                    .filter(a -> actividadTieneCategoria(a, categoriaIdsFiltro, categoriasFiltro))
+                    .toList();
+        } else if (usarPreferenciasPerfil && perfil != null) {
+            actividades = aplicarPreferenciasCategoriasPerfil(actividades, perfil);
+        }
+
+        if (perfil != null) {
+            actividades = aplicarFiltrosPerfil(actividades, perfil);
+        }
+
+        return actividades;
+    }
+
+
+    private List<Actividad> aplicarPreferenciasCategoriasPerfil(List<Actividad> actividades, Perfil perfil) {
+        if (perfil == null || perfil.getCategoriasPreferidas() == null || perfil.getCategoriasPreferidas().isEmpty()) {
+            return actividades;
+        }
+
+        Set<Long> categoriaIdsPreferidas = perfil.getCategoriasPreferidas().stream()
+                .filter(Objects::nonNull)
+                .map(Categoria::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Set<String> categoriasPreferidas = perfil.getCategoriasPreferidas().stream()
+                .filter(Objects::nonNull)
+                .map(Categoria::getNombre)
+                .map(this::normalizar)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toSet());
+
+        if (categoriaIdsPreferidas.isEmpty() && categoriasPreferidas.isEmpty()) {
+            return actividades;
+        }
+
+        List<Actividad> filtradas = actividades.stream()
+                .filter(a -> actividadTieneCategoria(a, categoriaIdsPreferidas, categoriasPreferidas))
+                .toList();
+
+        return filtradas.isEmpty() ? actividades : filtradas;
+    }
+
+    private Perfil resolverPerfil(Long grupoViajeId, Long usuarioId) {
+        if (grupoViajeId == null || usuarioId == null) {
+            return null;
+        }
+        List<Perfil> perfiles = perfilRepository.findAllByUsuarioIdAndGrupoViajeId(usuarioId, grupoViajeId);
+        return perfiles.isEmpty() ? null : perfiles.get(0);
+    }
+
+    private List<Actividad> aplicarFiltrosPerfil(List<Actividad> actividades, Perfil perfil) {
+        List<Actividad> filtradas = actividades;
+
+        if (perfil.getPresupuesto() != null && perfil.getPresupuesto() > 0) {
+            double presupuesto = perfil.getPresupuesto();
+            List<Actividad> porPresupuesto = filtradas.stream()
+                    .filter(a -> a.getCostoPorPersona() == null || a.getCostoPorPersona() <= presupuesto)
+                    .toList();
+            if (!porPresupuesto.isEmpty()) {
+                filtradas = porPresupuesto;
+            }
+        }
+
+        if (perfil.getTiempoDiarioActividades() != null && perfil.getTiempoDiarioActividades() > 0) {
+            int minutosDisponibles = perfil.getTiempoDiarioActividades() * 60;
+            List<Actividad> porTiempo = filtradas.stream()
+                    .filter(a -> a.getDuracionMin() == null || a.getDuracionMin() <= minutosDisponibles)
+                    .toList();
+            if (!porTiempo.isEmpty()) {
+                filtradas = porTiempo;
+            }
+        }
+
+        return filtradas;
+    }
+
+    private boolean actividadTieneCategoria(Actividad actividad, Set<Long> categoriaIds, Set<String> categorias) {
+        if (actividad == null || actividad.getCategorias() == null || actividad.getCategorias().isEmpty()) {
+            return false;
+        }
+        for (Categoria categoria : actividad.getCategorias()) {
+            if (categoria == null) continue;
+            if (!categoriaIds.isEmpty() && categoria.getId() != null && categoriaIds.contains(categoria.getId())) {
+                return true;
+            }
+            if (!categorias.isEmpty() && categorias.contains(normalizar(categoria.getNombre()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean coincideDestino(Actividad actividad, String destinoNormalizado) {
+        if (actividad == null) return false;
+        String ciudad = actividad.getCiudad() == null ? "" : actividad.getCiudad().getNombre();
+        String direccion = actividad.getUbicacion() == null ? "" : actividad.getUbicacion().getDireccion();
+        String nombreUbicacion = actividad.getUbicacion() == null ? "" : actividad.getUbicacion().getNombre();
+        String texto = normalizar(ciudad + " " + direccion + " " + nombreUbicacion + " " + actividad.getNombre());
+        return texto.contains(destinoNormalizado);
+    }
+
+    private String normalizar(String texto) {
+        if (texto == null) return "";
+        String limpio = Normalizer.normalize(texto, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        return limpio.trim().toLowerCase(Locale.ROOT);
     }
 
     public Actividad getById(Long id) {

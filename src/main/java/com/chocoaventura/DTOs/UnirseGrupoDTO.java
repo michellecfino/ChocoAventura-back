@@ -9,6 +9,7 @@ public class UnirseGrupoDTO {
 
     private Long usuarioId;
     private Long grupoId;
+    private String codigoInvitacion;
 
     // Datos del perfil (la relación)
     private List<Long> categoriasIds;

@@ -39,6 +39,21 @@ public class Pago {
     @OneToMany(mappedBy = "pagoOrigen", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Deuda> deudasGeneradas = new HashSet<>(); // deudas que salió de este pago
 
+    /** COMIDA, TRANSPORTE, ACTIVIDAD, HOSPEDAJE, COMPRAS, OTRO — opcional para reportes */
+    @Column(length = 50)
+    private String categoria;
+
+    /** INDIVIDUAL o COMPARTIDO */
+    @Column(length = 20)
+    private String tipoGasto;
+
+    @Column(length = 500)
+    private String nota;
+
+    /** JSON opcional: montos o porcentajes por perfil (split avanzado). */
+    @Column(columnDefinition = "TEXT")
+    private String detalleDivision;
+
     public Pago(String nombre, Double montoTotal, LocalDate fecha, GrupoViaje grupoViaje) {
         this.nombre = nombre;
         this.montoTotal = montoTotal;

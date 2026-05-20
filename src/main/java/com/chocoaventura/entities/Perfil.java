@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "perfiles")
+@Table(name = "perfiles", uniqueConstraints = @UniqueConstraint(name = "uk_perfil_usuario_grupo", columnNames = {"usuario_id", "grupo_viaje_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
