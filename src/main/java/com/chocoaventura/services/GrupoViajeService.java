@@ -1,13 +1,16 @@
 package com.chocoaventura.services;
 
+import java.text.Normalizer;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.chocoaventura.DTOs.CrearGrupoDTO;
+import com.chocoaventura.DTOs.GrupoViajeFlutterDTO;
 import com.chocoaventura.DTOs.UnirseGrupoDTO;
 import com.chocoaventura.entities.Actividad;
 import com.chocoaventura.entities.Categoria;
@@ -21,6 +24,7 @@ import com.chocoaventura.repositories.CategoriaRepository;
 import com.chocoaventura.repositories.CiudadRepository;
 import com.chocoaventura.repositories.GrupoViajeRepository;
 import com.chocoaventura.repositories.PerfilRepository;
+import com.chocoaventura.repositories.PrioridadCategoriaGrupoRepository;
 import com.chocoaventura.repositories.UbicacionRepository;
 import com.chocoaventura.repositories.UsuarioRepository;
 
@@ -40,6 +44,9 @@ public class GrupoViajeService {
 
     @Autowired
     private PerfilRepository perfilRepository;
+
+    @Autowired
+    private PrioridadCategoriaGrupoRepository prioridadCategoriaGrupoRepository;
 
     @Autowired
     private CiudadRepository ciudadRepository;
@@ -136,7 +143,7 @@ public class GrupoViajeService {
     if (hayDatosEstadia) {
 
         List<Ubicacion> estadias = ubicacionRepository
-            .findByDireccionAndLatitudAndLongitudList(
+            .findByDireccionAndLatitudAndLongitud(
                 dto.getDireccionEstadia(),
                 dto.getLatEstadia(),
                 dto.getLngEstadia()
@@ -165,7 +172,7 @@ public class GrupoViajeService {
         descripcion,
         dto.getHoraInicioActividades(),
         dto.getHoraAlmuerzo(),
-        dto.getTiempoParaAlmorzar(),
+        dto.duracionAlmuerzoEfectiva(),
         dto.getFechaInicio(),
         dto.getFechaFin(),
         ciudad,
@@ -174,6 +181,25 @@ public class GrupoViajeService {
 
     grupo.setEstadia(estadia);
     grupo.setEstado(EstadoGrupoViaje.ABIERTO);
+
+    grupo = grupoRepository.save(grupo);
+
+    // El front espera que el dueño del grupo también aparezca como participante/perfil.
+    // Sin este perfil, el creador no podía ver su viaje en /grupos/usuarios/{usuarioId}
+    // ni completar la exploración individual.
+    if (!perfilRepository.existsByUsuarioIdAndGrupoViajeId(dueno.getId(), grupo.getId())) {
+        Set<Categoria> categoriasCreador = resolverCategoriasPreferidas(dto.getCategoriasIds(), dto.getCategoriasPreferidas());
+        Perfil perfilDueno = crearPerfilParGrupoViaje(
+                dueno,
+                grupo,
+                categoriasCreador,
+                dto.presupuestoEfectivo(),
+                dto.personasACargoEfectivas(),
+                8,
+                true
+        );
+        perfilRepository.save(perfilDueno);
+    }
 
     return grupoRepository.save(grupo);
 
@@ -203,36 +229,222 @@ public class GrupoViajeService {
         return perfil;
     }
 
-    public void unirseAGrupoViaje(UnirseGrupoDTO dto) {
-        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId()).orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con id: " + dto.getUsuarioId()));
-        GrupoViaje grupo = grupoRepository.findById(dto.getGrupoId()).orElseThrow(() -> new EntityNotFoundException("Grupo no encontrado con id: " + dto.getGrupoId()));
-
-        if (perfilRepository.existsByUsuarioIdAndGrupoViajeId(dto.getUsuarioId(), dto.getGrupoId())) {
-            throw new IllegalArgumentException("El usuario ya pertenece a este grupo de viaje.");
-        }
+    public GrupoViaje unirseAGrupoViaje(UnirseGrupoDTO dto) {
+        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con id: " + dto.getUsuarioId()));
+        GrupoViaje grupo = resolverGrupoParaUnion(dto);
 
         List<Categoria> categorias = dto.getCategoriasIds() == null ? List.of() : categoriaRepository.findAllById(dto.getCategoriasIds());
         Set<Categoria> categoriasSet = new HashSet<>(categorias);
 
-        boolean participaEnCoordinacion = grupo.getEstado() == EstadoGrupoViaje.ABIERTO
-                || grupo.getEstado() == EstadoGrupoViaje.CONFIRMACION_GRUPAL_PENDIENTE;
+        List<Perfil> perfilesExistentes = perfilRepository.findAllByUsuarioIdAndGrupoViajeId(dto.getUsuarioId(), grupo.getId());
+        if (!perfilesExistentes.isEmpty()) {
+            Perfil perfil = perfilesExistentes.get(0);
+            if (dto.getPresupuesto() > 0) {
+                perfil.setPresupuesto(dto.getPresupuesto());
+            }
+            if (dto.getPersonasACargo() > 0) {
+                perfil.setPersonasCargo(Math.max(1, dto.getPersonasACargo()));
+            }
+            perfil.setCategoriasPreferidas(categoriasSet);
+            perfil.setParticipaEnCoordinacion(true);
+            perfilRepository.save(perfil);
+            return grupoRepository.findById(grupo.getId()).orElse(grupo);
+        }
+
+        if (grupo.getEstado() == EstadoGrupoViaje.ITINERARIO_GENERADO
+                || grupo.getEstado() == EstadoGrupoViaje.FINALIZADO) {
+            throw new IllegalStateException("No es posible unirse a un viaje que ya tiene itinerario generado o está finalizado.");
+        }
+
+        boolean participaEnCoordinacion = true;
 
         crearPerfilParGrupoViaje(
                 usuario,
                 grupo,
                 categoriasSet,
                 dto.getPresupuesto(),
-                dto.getPersonasACargo(),
+                Math.max(1, dto.getPersonasACargo()),
                 8,
                 participaEnCoordinacion
         );
 
-        grupoRepository.save(grupo);
+        // Si alguien entra después de que el grupo ya había avanzado, el progreso grupal
+        // debe recalcularse con el nuevo participante. También se invalidan votos anteriores
+        // de Mesa de Choco, porque el conjunto de categorías puede cambiar con sus swipes.
+        if (grupo.getEstado() == EstadoGrupoViaje.CONFIRMACION_GRUPAL_PENDIENTE
+                || grupo.getEstado() == EstadoGrupoViaje.COORDINACION_ACTIVA) {
+            grupo.setEstado(EstadoGrupoViaje.ABIERTO);
+            prioridadCategoriaGrupoRepository.deleteAll(
+                    prioridadCategoriaGrupoRepository.findByGrupoViajeId(grupo.getId())
+            );
+        }
+
+        grupo = grupoRepository.save(grupo);
         usuarioRepository.save(usuario);
+        return grupoRepository.findById(grupo.getId()).orElse(grupo);
+    }
+
+    public GrupoViaje buscarPorCodigoInvitacion(String codigo) {
+        Long grupoId = extraerGrupoIdDesdeCodigo(codigo);
+        return grupoRepository.findById(grupoId)
+                .orElseThrow(() -> new EntityNotFoundException("No existe un viaje con ese código."));
+    }
+
+    private GrupoViaje resolverGrupoParaUnion(UnirseGrupoDTO dto) {
+        if (dto.getGrupoId() != null) {
+            return grupoRepository.findById(dto.getGrupoId())
+                    .orElseThrow(() -> new EntityNotFoundException("Grupo no encontrado con id: " + dto.getGrupoId()));
+        }
+        if (dto.getCodigoInvitacion() != null && !dto.getCodigoInvitacion().isBlank()) {
+            return buscarPorCodigoInvitacion(dto.getCodigoInvitacion());
+        }
+        throw new IllegalArgumentException("Debes enviar grupoId o codigoInvitacion para unirte al viaje.");
+    }
+
+    private Long extraerGrupoIdDesdeCodigo(String codigoOriginal) {
+        if (codigoOriginal == null || codigoOriginal.isBlank()) {
+            throw new IllegalArgumentException("Código de invitación vacío.");
+        }
+        String codigo = codigoOriginal.trim();
+        int slash = Math.max(codigo.lastIndexOf('/'), codigo.lastIndexOf('\\'));
+        if (slash >= 0 && slash + 1 < codigo.length()) {
+            codigo = codigo.substring(slash + 1);
+        }
+        codigo = codigo.trim().toUpperCase();
+        if (codigo.startsWith("CHOCO-")) {
+            codigo = codigo.substring("CHOCO-".length());
+        }
+        String soloDigitos = codigo.replaceAll("[^0-9]", "");
+        if (soloDigitos.isBlank()) {
+            throw new IllegalArgumentException("Código de invitación inválido.");
+        }
+        return Long.parseLong(soloDigitos);
+    }
+
+    public List<GrupoViajeFlutterDTO> listarGruposPorUsuario(Long usuarioId) {
+        List<Perfil> perfiles = perfilRepository.findByUsuarioId(usuarioId);
+
+        return perfiles.stream()
+                .filter(p -> p.getGrupoViaje() != null)
+                .map(p -> GrupoViajeFlutterDTO.fromEntityForUsuario(
+                        p.getGrupoViaje(),
+                        p,
+                        todosExploraron(p.getGrupoViaje().getId()),
+                        usuarioPriorizo(p.getGrupoViaje().getId(), p),
+                        todosPriorizaron(p.getGrupoViaje().getId()),
+                        faltanPorPriorizar(p.getGrupoViaje().getId())
+                ))
+                .toList();
+    }
+
+
+    public GrupoViajeFlutterDTO toFlutterDTOForUsuario(GrupoViaje grupo, Long usuarioId) {
+        if (grupo == null) {
+            throw new EntityNotFoundException("Grupo de viaje no encontrado");
+        }
+        Perfil perfil = null;
+        if (usuarioId != null && grupo.getId() != null) {
+            perfil = perfilRepository.findAllByUsuarioIdAndGrupoViajeId(usuarioId, grupo.getId())
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+        }
+        return GrupoViajeFlutterDTO.fromEntityForUsuario(
+                grupo,
+                perfil,
+                todosExploraron(grupo.getId()),
+                usuarioPriorizo(grupo.getId(), perfil),
+                todosPriorizaron(grupo.getId()),
+                faltanPorPriorizar(grupo.getId())
+        );
+    }
+
+    private Set<Categoria> resolverCategoriasPreferidas(List<Long> categoriaIds, List<String> nombresCategorias) {
+        Set<Categoria> resultado = new HashSet<>();
+        if (categoriaIds != null && !categoriaIds.isEmpty()) {
+            resultado.addAll(categoriaRepository.findAllById(categoriaIds));
+        }
+        if (nombresCategorias != null) {
+            for (String nombre : nombresCategorias) {
+                if (nombre == null || nombre.isBlank()) continue;
+                Categoria categoria = buscarCategoriaPorNombreOAlias(nombre);
+                if (categoria != null) resultado.add(categoria);
+            }
+        }
+        return resultado;
+    }
+
+    private Categoria buscarCategoriaPorNombreOAlias(String nombre) {
+        String solicitada = normalizarTexto(nombre);
+        if (solicitada.isBlank()) return null;
+        Optional<Categoria> exacta = categoriaRepository.findByNombreIgnoreCase(nombre.trim());
+        if (exacta.isPresent()) return exacta.get();
+        for (Categoria categoria : categoriaRepository.findAll()) {
+            String disponible = normalizarTexto(categoria.getNombre());
+            if (disponible.equals(solicitada) || disponible.contains(solicitada) || solicitada.contains(disponible)) {
+                return categoria;
+            }
+            if (coincideAliasCategoria(solicitada, disponible)) return categoria;
+        }
+        return null;
+    }
+
+    private boolean coincideAliasCategoria(String solicitada, String disponible) {
+        if ((solicitada.contains("naturaleza") || solicitada.contains("aventura")) && disponible.contains("aventura")) return true;
+        if (solicitada.contains("cultura") && disponible.contains("cultura")) return true;
+        if (solicitada.contains("gastronomia") && disponible.contains("gastronomia")) return true;
+        if ((solicitada.contains("noche") || solicitada.contains("fiesta")) && disponible.contains("nocturna")) return true;
+        if (solicitada.contains("playa") && disponible.contains("playa")) return true;
+        if (solicitada.contains("local") && (disponible.contains("local") || disponible.contains("autentica"))) return true;
+        if (solicitada.contains("foto") && disponible.contains("autentica")) return true;
+        if (solicitada.contains("relax") && disponible.contains("relax")) return true;
+        return false;
+    }
+
+    private String normalizarTexto(String texto) {
+        if (texto == null) return "";
+        String sinTildes = Normalizer.normalize(texto, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        return sinTildes.toLowerCase().trim();
+    }
+
+    private boolean todosExploraron(Long grupoId) {
+        List<Perfil> participantes = perfilRepository.findByGrupoViajeIdAndParticipaEnCoordinacionTrue(grupoId);
+        return !participantes.isEmpty() && participantes.stream().allMatch(p -> Boolean.TRUE.equals(p.getFaseIndividualLista()));
+    }
+
+    private boolean usuarioPriorizo(Long grupoId, Perfil perfil) {
+        if (perfil == null || perfil.getId() == null) return false;
+        return !prioridadCategoriaGrupoRepository.findByGrupoViajeIdAndPerfilIdOrderByPosicionAsc(grupoId, perfil.getId()).isEmpty();
+    }
+
+    private boolean todosPriorizaron(Long grupoId) {
+        List<Perfil> participantes = perfilRepository.findByGrupoViajeIdAndParticipaEnCoordinacionTrue(grupoId);
+        if (participantes.isEmpty()) return false;
+        for (Perfil participante : participantes) {
+            if (!usuarioPriorizo(grupoId, participante)) return false;
+        }
+        return true;
+    }
+
+    private int faltanPorPriorizar(Long grupoId) {
+        List<Perfil> participantes = perfilRepository.findByGrupoViajeIdAndParticipaEnCoordinacionTrue(grupoId);
+        if (participantes.isEmpty()) return 0;
+        int priorizados = 0;
+        for (Perfil participante : participantes) {
+            if (participante.getId() == null) continue;
+            if (!prioridadCategoriaGrupoRepository
+                    .findByGrupoViajeIdAndPerfilIdOrderByPosicionAsc(grupoId, participante.getId())
+                    .isEmpty()) {
+                priorizados++;
+            }
+        }
+        return Math.max(0, participantes.size() - priorizados);
     }
 
     public String generarLinkInvitacion(Long grupoId) {
-        return "chocoaventura://grupo/" + grupoId;
+        return "https://chocoaventura.app/invitacion/CHOCO-" + grupoId;
     }
 
     /*

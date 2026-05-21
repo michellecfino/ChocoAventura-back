@@ -34,14 +34,15 @@ public class CategoriaController {
     public List<CategoriaResponseDTO> getAll() {
         List<CategoriaResponseDTO> respuesta= new ArrayList<>();
         for (Categoria c: categoriaService.getAll()){
-            respuesta.addLast(new CategoriaResponseDTO(c.getId(), c.getNombre(), c.getDescripcion()));
+            respuesta.add(new CategoriaResponseDTO(c.getId(), c.getNombre(), c.getDescripcion()));
         }
         return respuesta;
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Categoria> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(categoriaService.getById(id));
+    public ResponseEntity<CategoriaResponseDTO> getById(@PathVariable Long id) {
+        Categoria c = categoriaService.getById(id);
+        return ResponseEntity.ok(new CategoriaResponseDTO(c.getId(), c.getNombre(), c.getDescripcion()));
     }
 
     @PutMapping("/{id}")

@@ -10,6 +10,7 @@ public interface PerfilRepository extends JpaRepository<Perfil, Long> {
     List<Perfil> findByUsuarioId(Long usuarioId);
     List<Perfil> findByGrupoViajeId(Long grupoViajeId);
     Optional<Perfil> findByUsuarioIdAndGrupoViajeId(Long usuarioId, Long grupoViajeId);
+    List<Perfil> findAllByUsuarioIdAndGrupoViajeId(Long usuarioId, Long grupoViajeId);
     boolean existsByUsuarioIdAndGrupoViajeId(Long usuarioId, Long grupoViajeId);
     List<Perfil> findByGrupoViajeIdAndFaseIndividualListaTrue(Long grupoViajeId);
     List<Perfil> findByGrupoViajeIdAndParticipaEnCoordinacionTrue(Long grupoViajeId);

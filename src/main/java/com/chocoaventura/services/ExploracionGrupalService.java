@@ -3,6 +3,7 @@ package com.chocoaventura.services;
 import com.chocoaventura.DTOs.*;
 import com.chocoaventura.entities.*;
 import com.chocoaventura.entities.enums.EstadoGrupoViaje;
+import com.chocoaventura.repositories.ActividadRepository;
 import com.chocoaventura.repositories.BloqueExploracionGrupalRepository;
 import com.chocoaventura.repositories.GrupoViajeRepository;
 import com.chocoaventura.repositories.PerfilRepository;
@@ -37,8 +38,14 @@ public class ExploracionGrupalService {
     private BloqueExploracionGrupalRepository bloqueRepository;
     @Autowired
     private RondaSubastaService rondaSubastaService;
+    @Autowired
+    private ActividadRepository actividadRepository;
 
     public EstadoExploracionGrupalDTO evaluarEstado(Long grupoId) {
+        return evaluarEstado(grupoId, null);
+    }
+
+    public EstadoExploracionGrupalDTO evaluarEstado(Long grupoId, Long usuarioId) {
         GrupoViaje grupo = obtenerGrupo(grupoId);
         List<Perfil> perfilesDecisores = perfilRepository.findByGrupoViajeIdAndParticipaEnCoordinacionTrue(grupoId);
         int total = perfilesDecisores.size();
@@ -65,6 +72,23 @@ public class ExploracionGrupalService {
             mensaje = "El grupo sigue abierto y puede seguir recibiendo participantes.";
         }
 
+        Boolean usuarioExploro = null;
+        Boolean usuarioDebeExplorar = null;
+        Boolean usuarioPuedeExplorar = null;
+        if (usuarioId != null) {
+            List<Perfil> perfilesUsuario = perfilRepository.findAllByUsuarioIdAndGrupoViajeId(usuarioId, grupoId);
+            if (!perfilesUsuario.isEmpty()) {
+                Perfil perfilUsuario = perfilesUsuario.get(0);
+                usuarioExploro = Boolean.TRUE.equals(perfilUsuario.getFaseIndividualLista());
+                usuarioDebeExplorar = !usuarioExploro;
+                usuarioPuedeExplorar = !usuarioExploro;
+            } else {
+                usuarioExploro = false;
+                usuarioDebeExplorar = false;
+                usuarioPuedeExplorar = false;
+            }
+        }
+
         return new EstadoExploracionGrupalDTO(
                 grupoId,
                 grupo.getEstado().name(),
@@ -72,8 +96,96 @@ public class ExploracionGrupalService {
                 requiereConfirmacion,
                 total,
                 listos,
-                mensaje
+                mensaje,
+                participantesEstado(grupoId),
+                usuarioExploro,
+                usuarioDebeExplorar,
+                usuarioPuedeExplorar
         );
+    }
+
+    @Transactional
+    public EstadoExploracionGrupalDTO registrarExploracionIndividual(Long grupoId, Long usuarioId, List<String> actividadesInteresIds) {
+        if (usuarioId == null) {
+            throw new IllegalArgumentException("usuarioId es obligatorio para registrar la exploración individual.");
+        }
+
+        Perfil perfil = perfilRepository.findAllByUsuarioIdAndGrupoViajeId(usuarioId, grupoId)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("El usuario no pertenece a este grupo de viaje."));
+
+        if (actividadesInteresIds != null) {
+            Set<Actividad> seleccionadas = actividadesInteresIds.stream()
+                    .map(this::parseLongOrNull)
+                    .filter(Objects::nonNull)
+                    .map(id -> actividadRepository.findById(id).orElse(null))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            perfil.getActividadesSeleccionadas().clear();
+            perfil.getActividadesSeleccionadas().addAll(seleccionadas);
+        }
+
+        perfil.setFaseIndividualLista(true);
+        perfilRepository.save(perfil);
+
+        EstadoExploracionGrupalDTO estado = evaluarEstado(grupoId, usuarioId);
+        if (estado.isTodosLosPerfilesListos()) {
+            activarCoordinacionAutomaticamenteSiHayCandidatos(grupoId);
+            estado = evaluarEstado(grupoId, usuarioId);
+        }
+        return estado;
+    }
+
+    private Long parseLongOrNull(String raw) {
+        if (raw == null) return null;
+        try {
+            return Long.parseLong(raw.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private List<ParticipanteEstadoDTO> participantesEstado(Long grupoId) {
+        return perfilRepository.findByGrupoViajeIdAndParticipaEnCoordinacionTrue(grupoId).stream()
+                .sorted(Comparator.comparing(p -> nombreUsuario(p), String.CASE_INSENSITIVE_ORDER))
+                .map(p -> new ParticipanteEstadoDTO(
+                        p.getId(),
+                        p.getUsuario() == null ? null : p.getUsuario().getId(),
+                        nombreUsuario(p),
+                        Boolean.TRUE.equals(p.getFaseIndividualLista())
+                ))
+                .toList();
+    }
+
+    private String nombreUsuario(Perfil perfil) {
+        if (perfil == null || perfil.getUsuario() == null || perfil.getUsuario().getNombre() == null) {
+            return "Participante";
+        }
+        return perfil.getUsuario().getNombre();
+    }
+
+    private void activarCoordinacionAutomaticamenteSiHayCandidatos(Long grupoId) {
+        GrupoViaje grupo = obtenerGrupo(grupoId);
+        if (grupo.getEstado() == EstadoGrupoViaje.ITINERARIO_GENERADO) {
+            return;
+        }
+        List<Perfil> perfilesDecisores = perfilRepository.findByGrupoViajeIdAndParticipaEnCoordinacionTrue(grupoId);
+        boolean hayActividades = perfilesDecisores.stream().anyMatch(p -> !p.getActividadesSeleccionadas().isEmpty());
+        if (!hayActividades) {
+            return;
+        }
+        if (grupo.getEstado() != EstadoGrupoViaje.COORDINACION_ACTIVA) {
+            grupo.setEstado(EstadoGrupoViaje.COORDINACION_ACTIVA);
+            grupo.setFechaConfirmacionCoordinacion(LocalDateTime.now());
+            grupoViajeRepository.save(grupo);
+        }
+        try {
+            generarExploracionGrupal(grupoId);
+        } catch (RuntimeException e) {
+            grupo.setEstado(EstadoGrupoViaje.CONFIRMACION_GRUPAL_PENDIENTE);
+            grupoViajeRepository.save(grupo);
+        }
     }
 
     @Transactional
@@ -98,7 +210,8 @@ public class ExploracionGrupalService {
                     false,
                     estado.getTotalPerfilesDecisores(),
                     estado.getPerfilesListos(),
-                    "El dueño decidió seguir esperando. Avísales a los demás compañeros que se unan y completen sus preferencias."
+                    "El dueño decidió seguir esperando. Avísales a los demás compañeros que se unan y completen sus preferencias.",
+                    participantesEstado(grupoId)
             );
         }
 
@@ -114,7 +227,8 @@ public class ExploracionGrupalService {
                 false,
                 estado.getTotalPerfilesDecisores(),
                 estado.getPerfilesListos(),
-                "La coordinación grupal quedó iniciada y las rondas fueron generadas correctamente."
+                "La coordinación grupal quedó iniciada y las rondas fueron generadas correctamente.",
+                participantesEstado(grupoId)
         );
     }
 
