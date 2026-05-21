@@ -1,5 +1,4 @@
 package com.chocoaventura.config;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -12,6 +11,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -33,6 +33,11 @@ import com.chocoaventura.repositories.UbicacionRepository;
 import com.chocoaventura.repositories.UsuarioRepository;
 
 @Configuration
+@ConditionalOnProperty(
+        name = "app.seed.enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 public class SeedDataConfig {
 
     @Bean
@@ -45,10 +50,7 @@ public class SeedDataConfig {
             GrupoViajeRepository grupoViajeRepository,
             PerfilRepository perfilRepository
     ) {
-        return args -> {
-            if (usuarioRepository.existsByCorreo("laura@choco.com")) {
-                return;
-             }
+        return args -> {  
             Map<String, Categoria> categorias = crearCategorias(categoriaRepository);
             Map<String, Ciudad> ciudades = crearCiudades(ciudadRepository);
             Map<String, Ubicacion> ubicaciones = crearUbicaciones(ubicacionRepository);
