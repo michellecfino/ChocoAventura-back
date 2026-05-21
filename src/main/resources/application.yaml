@@ -1,17 +1,21 @@
-spring:
-  application:
-    name: chocoaventura
+server:
+  port: ${PORT:8080}
 
+spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/chocoaventura_db
-    username: choco
-    password: lala
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/chocoaventura_db}
+    username: ${SPRING_DATASOURCE_USERNAME:choco}
+    password: ${SPRING_DATASOURCE_PASSWORD:lala}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    show-sql: true
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  web:
+    resources:
+      static-locations: classpath:/static/
