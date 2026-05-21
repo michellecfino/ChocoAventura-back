@@ -46,9 +46,9 @@ public class SeedDataConfig {
             PerfilRepository perfilRepository
     ) {
         return args -> {
-            if (usuarioRepository.count() > 0) {
+            if (usuarioRepository.existsByCorreo("laura@choco.com")) {
                 return;
-            }
+             }
             Map<String, Categoria> categorias = crearCategorias(categoriaRepository);
             Map<String, Ciudad> ciudades = crearCiudades(ciudadRepository);
             Map<String, Ubicacion> ubicaciones = crearUbicaciones(ubicacionRepository);
