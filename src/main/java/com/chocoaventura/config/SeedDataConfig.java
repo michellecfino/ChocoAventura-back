@@ -1,12 +1,5 @@
 package com.chocoaventura.config;
 
-import com.chocoaventura.entities.*;
-import com.chocoaventura.entities.enums.EstadoGrupoViaje;
-import com.chocoaventura.repositories.*;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -17,6 +10,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import com.chocoaventura.entities.Actividad;
+import com.chocoaventura.entities.Categoria;
+import com.chocoaventura.entities.Ciudad;
+import com.chocoaventura.entities.GrupoViaje;
+import com.chocoaventura.entities.Imagen;
+import com.chocoaventura.entities.Perfil;
+import com.chocoaventura.entities.Ubicacion;
+import com.chocoaventura.entities.Usuario;
+import com.chocoaventura.entities.enums.EstadoGrupoViaje;
+import com.chocoaventura.repositories.ActividadRepository;
+import com.chocoaventura.repositories.CategoriaRepository;
+import com.chocoaventura.repositories.CiudadRepository;
+import com.chocoaventura.repositories.GrupoViajeRepository;
+import com.chocoaventura.repositories.PerfilRepository;
+import com.chocoaventura.repositories.UbicacionRepository;
+import com.chocoaventura.repositories.UsuarioRepository;
 
 @Configuration
 public class SeedDataConfig {
@@ -32,6 +46,9 @@ public class SeedDataConfig {
             PerfilRepository perfilRepository
     ) {
         return args -> {
+            if (usuarioRepository.count() > 0) {
+                return;
+            }
             Map<String, Categoria> categorias = crearCategorias(categoriaRepository);
             Map<String, Ciudad> ciudades = crearCiudades(ciudadRepository);
             Map<String, Ubicacion> ubicaciones = crearUbicaciones(ubicacionRepository);
